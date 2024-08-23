@@ -1,4 +1,5 @@
 using Game.Grid;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Game.Actions
@@ -16,7 +17,7 @@ namespace Game.Actions
             return base.StartAction(baseParams);
         }
 
-        public override bool UpdateAction()
+        public override bool UpdateAction(BaseActionParameters args)
         {
             float spinToAdd = spinSpeed * Time.deltaTime;
             transform.eulerAngles += new Vector3(0, spinToAdd, 0);
@@ -28,6 +29,18 @@ namespace Game.Actions
             }
 
             return false;
+        }
+
+        public override IEnumerable<GridPosition> GetValidActionGridPositions()
+        {
+            List<GridPosition> validGridPositionList = new List<GridPosition>();
+
+            if (LevelGrid.Instance.IsValidGridPosition(unit.GetGridPosition()))
+            {
+                validGridPositionList.Add(unit.GetGridPosition());
+            }
+
+            return validGridPositionList;
         }
 
         public override string GetActionName()

@@ -11,6 +11,7 @@ namespace Game.Units
         [SerializeField] private float rotateSpeed = 10f;
         [SerializeField] private float moveSpeed = 4f;
         [SerializeField] private float stoppingDistance = .1f;
+        [SerializeField] private bool isEnemy = false;
 
         private GridPosition gridPosition;
 
@@ -60,6 +61,16 @@ namespace Game.Units
         public IEnumerable<BaseAction> GetBaseActions()
         {
             return baseActions;
+        }
+
+        public bool IsEnemy()
+        {
+            return isEnemy; 
+        }
+
+        public void Damage()
+        {
+            Debug.Log(transform + " damaged!");
         }
     }
 }

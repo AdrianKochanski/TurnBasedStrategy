@@ -1,4 +1,5 @@
 using Game.Actions;
+using Game.Core;
 using Game.Units;
 using System;
 using System.Collections.Generic;
@@ -23,6 +24,7 @@ namespace Game.UI
             UnitActionSystem.Instance.OnSelectedUnitChange += UnitActionSystem_OnSelectedUnitChange;
             UnitActionSystem.Instance.OnSelectedActionChange += UnitActionSystem_OnSelectedActionChange;
             UnitActionSystem.Instance.OnBusyChange += UnitActionSystem_OnBusyChange;
+            TurnSystem.Instance.onPlayerChange += UnitActionSystem_OnPlayerChange;
             CreateUnitActionButtons(UnitActionSystem.Instance.GetSelectedUnit());
         }
 
@@ -34,6 +36,11 @@ namespace Game.UI
         private void UnitActionSystem_OnSelectedActionChange(BaseAction selectedAction)
         {
             UpdateSelectedVisual(selectedAction);
+        }
+
+        private void UnitActionSystem_OnPlayerChange(bool isPlayer)
+        {
+            UnitActionSystem_OnBusyChange(!isPlayer);
         }
 
         private void UnitActionSystem_OnBusyChange(bool isBusy)

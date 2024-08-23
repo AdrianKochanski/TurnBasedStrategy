@@ -1,9 +1,7 @@
 using Game.Grid;
 using System.Collections.Generic;
-using System.Linq;
-using Unity.VisualScripting;
 using UnityEngine;
-using static Game.Actions.MoveAction;
+using UnityEngine.EventSystems;
 
 namespace Game.Actions
 {
@@ -14,15 +12,8 @@ namespace Game.Actions
         [SerializeField] private float moveSpeed = 4f;
         [SerializeField] private float stoppingDistance = .1f;
 
-        private Vector3 targetPosition;
 
-        protected override void Awake()
-        {
-            base.Awake();
-            targetPosition = transform.position;
-        }
-
-        public override bool UpdateAction()
+        public override bool UpdateAction(BaseActionParameters args)
         {
             Vector3 moveDirection = (targetPosition - transform.position).normalized;
 
@@ -41,12 +32,6 @@ namespace Game.Actions
             return false;
         }
 
-        public override bool StartAction(BaseActionParameters baseParams)
-        {
-            targetPosition = LevelGrid.Instance.GetWorldPositon(baseParams.gridPosition);
-            return base.StartAction(baseParams);
-        }
-
         public override bool IsValidActionGridPositon(BaseActionParameters args)
         {
             if (LevelGrid.Instance.IsUnitInsideTheGrid(unit))
@@ -55,7 +40,7 @@ namespace Game.Actions
             }
             else
             {
-                return !LevelGrid.Instance.IsValidGridPosition(args.gridPosition) || LevelGrid.Instance.IsGridBorder(args.gridPosition);
+                return !LevelGrid.Instance.IsValidGridPosition(args.targetGridPosition) || LevelGrid.Instance.IsGridBorder(args.targetGridPosition);
             }
         }
 
@@ -76,7 +61,7 @@ namespace Game.Actions
                     if (!LevelGrid.Instance.IsValidGridPosition(testGridPosition)) continue;
                     if (LevelGrid.Instance.HasAnyUnitOnGridPosition(testGridPosition)) continue;
                     if (!LevelGrid.Instance.IsUnitInsideTheGrid(unit) && !LevelGrid.Instance.IsGridBorder(testGridPosition)) continue;
-                    if (!CanSpendActionPoints(new BaseActionParameters() { gridPosition = testGridPosition })) continue;
+                    if (!CanSpendActionPoints(new BaseActionParameters() { targetGridPosition = testGridPosition })) continue;
 
                     validGridPositions.Add(testGridPosition);
                 }
@@ -87,7 +72,7 @@ namespace Game.Actions
 
         public override float GetActionPointCost(BaseActionParameters args)
         {
-            return base.GetActionPointCost(args) * GridPosition.Distance(unit.GetGridPosition(), args.gridPosition);
+            return base.GetActionPointCost(args) * GridPosition.Distance(unit.GetGridPosition(), args.targetGridPosition);
         }
 
         public override string GetActionName()

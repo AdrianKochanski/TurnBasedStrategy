@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 2546076826974446338}
   - component: {fileID: 6357810760602688601}
   - component: {fileID: 7368179265212297104}
+  - component: {fileID: 3363608841698962897}
   m_Layer: 7
   m_Name: Unit
   m_TagString: Untagged
@@ -52,6 +53,7 @@ MonoBehaviour:
   rotateSpeed: 10
   moveSpeed: 4
   stoppingDistance: 0.1
+  isEnemy: 0
 --- !u!65 &2546076826974446338
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -79,7 +81,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   points: 3
   costPointRate: 1
-  restorePointRate: 2
+  restorePointTurnRate: 1
+  maxPointLimit: 3
   unitAnimator: {fileID: 3247384971468729913}
   rotateSpeed: 10
   moveSpeed: 4
@@ -98,9 +101,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   points: 2
   costPointRate: 1
-  restorePointRate: 1
+  restorePointTurnRate: 1
+  maxPointLimit: 3
   spinSpeed: 360
   eulerAnglesDestination: 360
+--- !u!114 &3363608841698962897
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3190038031073224851}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab502a30e68ff0a4191dfc0c9de59a8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  points: 3
+  costPointRate: 2
+  restorePointTurnRate: 1.5
+  maxPointLimit: 4
 --- !u!1 &6851505847083636503
 GameObject:
   m_ObjectHideFlags: 0

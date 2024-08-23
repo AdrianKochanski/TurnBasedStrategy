@@ -13,6 +13,7 @@ namespace Game.UI
         [SerializeField] private Button button;
         [SerializeField] private Transform selectedVisual;
         [SerializeField] private TextMeshProUGUI actionCountText;
+        [SerializeField] private TextMeshProUGUI actionRestoreCountText;
         [SerializeField] private Color activeColor = Color.white;
         [SerializeField] private Color disabledColor = Color.white;
 
@@ -32,6 +33,7 @@ namespace Game.UI
                 UnitActionSystem.Instance.SetSelectedAction(baseAction);
             });
             UpdateActionCountText();
+            UpdateActionRestoreCountText();
             baseAction.onRestorePoints += BaseAction_OnRestorePoints;
         }
 
@@ -82,7 +84,12 @@ namespace Game.UI
                 actionCountText.color = disabledColor;
             }
 
-            actionCountText.text = $"{count}";
+            actionCountText.text = $"{count}/{baseAction.GetPossibleActionsCountLimit()}";
+        }
+
+        private void UpdateActionRestoreCountText()
+        {
+            actionRestoreCountText.text = $"+{baseAction.GetRestoreActionTurnRate().ToString("F2")}";
         }
     }
 }

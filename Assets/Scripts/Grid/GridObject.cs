@@ -28,6 +28,13 @@ namespace Game.Grid
             return units;
         }
 
+        public bool TryGetUnit(out Unit unit)
+        {
+            unit = units.FirstOrDefault();
+            if (unit == null) return false;
+            return true;
+        }
+
         public void AddUnit(Unit unit)
         {
             units.Add(unit);

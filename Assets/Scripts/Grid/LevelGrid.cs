@@ -42,6 +42,19 @@ namespace Game.Grid
             return Enumerable.Empty<Unit>();
         }
 
+        public bool TryGetUnitAtGridPosition(GridPosition gridPosition, out Unit unit)
+        {
+            unit = null;
+
+            if (gridSystem.TryGetGridObject(gridPosition, out GridObject gridObject)
+                && gridObject.TryGetUnit(out unit))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         public void AddUnitAtGridPosition(GridPosition gridPosition, Unit unit)
         {
             if (gridSystem.TryGetGridObject(gridPosition, out GridObject gridObject))

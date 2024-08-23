@@ -41,6 +41,7 @@ namespace Game.Units
         private void Update()
         {
             if (isBusy) return;
+            if (!TurnSystem.Instance.IsPlayerTurn()) return;
             if (EventSystem.current.IsPointerOverGameObject()) return;
 
             if (Input.GetMouseButtonDown(0))
@@ -85,7 +86,7 @@ namespace Game.Units
 
             if (Physics.Raycast(ray, out RaycastHit hit, float.MaxValue, unitLayerMask))
             {
-                if (hit.transform.TryGetComponent<Unit>(out Unit newSelectedUnit) && selectedUnit != newSelectedUnit)
+                if (hit.transform.TryGetComponent<Unit>(out Unit newSelectedUnit) && selectedUnit != newSelectedUnit && !newSelectedUnit.IsEnemy())
                 {
                     SetSelectedUnit(newSelectedUnit);
                     return true;
@@ -121,18 +122,15 @@ namespace Game.Units
             bool newPositionFound = MouseWorld.TryGetPosition(out Vector3 mousePosition);
             if (newPositionFound) gridPosition = LevelGrid.Instance.GetGridPosition(mousePosition);
 
-            if(selectedAction.IsValidActionGridPositon(new BaseActionParameters() { gridPosition = gridPosition }))
+            if(selectedAction.IsValidActionGridPositon(new BaseActionParameters() { targetGridPosition = gridPosition }))
             {
                 switch (selectedAction)
                 {
                     case MoveAction moveAction:
-                        moveAction.StartAction(new BaseActionParameters() { gridPosition = gridPosition });
-                        break;
-                    case SpinAction spinAction:
-                        spinAction.StartAction(new BaseActionParameters() { gridPosition = gridPosition });
+                        moveAction.StartAction(new BaseActionParameters() { targetGridPosition = gridPosition });
                         break;
                     default:
-                        selectedAction.StartAction(new BaseActionParameters() { gridPosition = gridPosition });
+                        selectedAction.StartAction(new BaseActionParameters() { targetGridPosition = gridPosition });
                         break;
                 }
             }

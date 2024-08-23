@@ -17,6 +17,8 @@ namespace Game.Actions
 
         protected Unit unit;
         private bool isActive;
+        protected Vector3 targetPosition;
+        private BaseActionParameters args;
 
         public event Action onActionBegin;
         public event Action onActionComplete;
@@ -29,37 +31,41 @@ namespace Game.Actions
 
         protected virtual void Start()
         {
-            TurnSystem.Instance.onTurnChange += BaseAction_OnTurnChange;
+            TurnSystem.Instance.onTurnChange += TurnSystem_OnTurnChange;
         }
 
         protected void Update() 
         { 
             if (!isActive) return;
 
-            if(UpdateAction())
+            if(UpdateAction(args))
             {
                 isActive = false;
                 onActionComplete?.Invoke();
             }
         }
 
-        private void BaseAction_OnTurnChange(int turnNumber)
+        private void TurnSystem_OnTurnChange(int turnNumber)
         {
             points += restorePointTurnRate;
             points = MathF.Min(points, maxPointLimit);
             onRestorePoints?.Invoke();
         }
 
-        public abstract bool UpdateAction();
+        public abstract bool UpdateAction(BaseActionParameters args);
+        public abstract string GetActionName();
+        public abstract IEnumerable<GridPosition> GetValidActionGridPositions();
 
         public class BaseActionParameters { 
-            internal GridPosition gridPosition;
+            internal GridPosition targetGridPosition;
         }
 
         public virtual bool StartAction(BaseActionParameters args)
         {
             if (!CanSpendActionPoints(args)) return false;
-            
+
+            this.args = args;
+            targetPosition = LevelGrid.Instance.GetWorldPositon(args.targetGridPosition);
             onActionBegin?.Invoke();
             isActive = true;
             SpendActionPoints(args);
@@ -71,8 +77,6 @@ namespace Game.Actions
             StartAction(null);
         }
 
-        public abstract string GetActionName();
-
         public bool IsActionSetup()
         {
             return onActionBegin != null && onActionComplete != null;
@@ -81,24 +85,17 @@ namespace Game.Actions
         public virtual bool IsValidActionGridPositon(BaseActionParameters args)
         {
             IEnumerable<GridPosition> validGridPositions = GetValidActionGridPositions();
-            return validGridPositions.Contains(args.gridPosition);
-        }
-
-        public virtual IEnumerable<GridPosition> GetValidActionGridPositions()
-        {
-            List<GridPosition> validGridPositionList = new List<GridPosition>();
-
-            if(LevelGrid.Instance.IsValidGridPosition(unit.GetGridPosition()))
-            {
-                validGridPositionList.Add(unit.GetGridPosition());
-            }
-
-            return validGridPositionList;
+            return validGridPositions.Contains(args.targetGridPosition);
         }
 
         public int GetPossibleActionsCount()
         {
             return Mathf.FloorToInt(points / costPointRate);
+        }
+
+        public int GetPossibleActionsCountLimit()
+        {
+            return Mathf.FloorToInt(maxPointLimit / costPointRate);
         }
 
         public bool CanSpendActionPoints(BaseActionParameters args)
@@ -109,6 +106,11 @@ namespace Game.Actions
         public virtual float GetActionPointCost(BaseActionParameters args)
         {
             return costPointRate;
+        }
+
+        public virtual float GetRestoreActionTurnRate()
+        {
+            return restorePointTurnRate / costPointRate;
         }
 
         protected void SpendActionPoints(BaseActionParameters args)

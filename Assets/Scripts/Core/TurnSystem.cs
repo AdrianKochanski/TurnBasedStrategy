@@ -11,8 +11,9 @@ namespace Game.Core
         public static TurnSystem Instance { get; private set; }
 
         private int turnNumber = 1;
-
+        private bool isPlayerTurn = true;
         public event Action<int> onTurnChange;
+        public event Action<bool> onPlayerChange;
 
         private void Awake()
         {
@@ -27,13 +28,26 @@ namespace Game.Core
 
         public void NextTurn()
         {
-            turnNumber++;
-            onTurnChange?.Invoke(turnNumber);
+            // if last player
+            if (!isPlayerTurn)
+            {
+                turnNumber++;
+                onTurnChange?.Invoke(turnNumber);
+            }
+
+            // change Turn for the new player
+            isPlayerTurn = !isPlayerTurn;
+            onPlayerChange?.Invoke(isPlayerTurn);
         }
 
         public int GetTurn()
         {
             return turnNumber;
+        }
+
+        public bool IsPlayerTurn()
+        {
+            return isPlayerTurn;
         }
     }
 }

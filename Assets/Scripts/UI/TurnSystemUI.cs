@@ -10,22 +10,25 @@ namespace Game.UI
     public class TurnSystemUI : MonoBehaviour
     {
         [SerializeField] Button turnButton;
+        [SerializeField] TextMeshProUGUI turnButtonText;
         [SerializeField] TextMeshProUGUI turnNumberText;
-
-        private void Awake()
-        {
-            TurnSystem.Instance.onTurnChange += UpdateTurnText;
-        }
 
         private void Start()
         {
             turnButton.onClick.AddListener(() => TurnSystem.Instance.NextTurn());
+            TurnSystem.Instance.onTurnChange += TurnSystem_OnTurnChange;
+            TurnSystem.Instance.onPlayerChange += TurnSystem_OnPlayerChange;
         }
 
-        public void UpdateTurnText(int turnNumber)
+        private void TurnSystem_OnTurnChange(int turnNumber)
         {
             turnNumberText.text = $"TURN: {turnNumber}";
         }
 
+        private void TurnSystem_OnPlayerChange(bool isPlayer)
+        {
+            turnButton.enabled = isPlayer;
+            turnButtonText.text = isPlayer ? "END TURN" : "ENEMY TURN";
+        }
     }
 }
