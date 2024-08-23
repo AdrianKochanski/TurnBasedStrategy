@@ -77,11 +77,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8950e63caa8395a45b4f41b14c131a79, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  points: 3
+  costPointRate: 1
+  restorePointRate: 2
+  unitAnimator: {fileID: 3247384971468729913}
   rotateSpeed: 10
   moveSpeed: 4
   stoppingDistance: 0.1
-  maxMoveDistance: 2
-  unitAnimator: {fileID: 3247384971468729913}
 --- !u!114 &7368179265212297104
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -94,6 +96,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 293e7305be83b974da101cd93690af6b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  points: 2
+  costPointRate: 1
+  restorePointRate: 1
+  spinSpeed: 360
+  eulerAnglesDestination: 360
 --- !u!1 &6851505847083636503
 GameObject:
   m_ObjectHideFlags: 0

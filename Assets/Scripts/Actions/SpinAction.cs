@@ -10,10 +10,10 @@ namespace Game.Actions
 
         private float totalSpinAmount = 0;
 
-        public override void StartAction(BaseActionParameters baseParams)
+        public override bool StartAction(BaseActionParameters baseParams)
         {
-            base.StartAction(baseParams);
             totalSpinAmount = 0;
+            return base.StartAction(baseParams);
         }
 
         public override bool UpdateAction()

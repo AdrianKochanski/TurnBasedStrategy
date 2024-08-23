@@ -121,7 +121,7 @@ namespace Game.Units
             bool newPositionFound = MouseWorld.TryGetPosition(out Vector3 mousePosition);
             if (newPositionFound) gridPosition = LevelGrid.Instance.GetGridPosition(mousePosition);
 
-            if(selectedAction.IsValidActionGridPositon(gridPosition))
+            if(selectedAction.IsValidActionGridPositon(new BaseActionParameters() { gridPosition = gridPosition }))
             {
                 switch (selectedAction)
                 {
@@ -138,5 +138,4 @@ namespace Game.Units
             }
         }
     }
-
 }

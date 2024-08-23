@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Game.Units
+namespace Game.UI
 {
     public class UnitActionSystemUI : MonoBehaviour
     {
@@ -38,7 +38,13 @@ namespace Game.Units
 
         private void UnitActionSystem_OnBusyChange(bool isBusy)
         {
-            UpdateButtonInteractable(!isBusy);
+            foreach (UnitActionButtonUI button in unitActionButtonUIList)
+            {
+                button.UpdateButtonInteractable(!isBusy);
+                button.UpdateActionCountText();
+            }
+
+            UpdateSelectedVisual(UnitActionSystem.Instance.GetSelectedAction());
         }
 
         private void CreateUnitActionButtons(Unit selectedUnit)
@@ -65,14 +71,6 @@ namespace Game.Units
             foreach (UnitActionButtonUI button in unitActionButtonUIList)
             {
                 button.UpdateSelectedVisual(selectedAction);
-            }
-        }
-
-        private void UpdateButtonInteractable(bool interactable)
-        {
-            foreach (UnitActionButtonUI button in unitActionButtonUIList)
-            {
-                button.UpdateButtonInteractable(interactable);
             }
         }
     }

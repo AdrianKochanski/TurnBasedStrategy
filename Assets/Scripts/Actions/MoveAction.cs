@@ -13,7 +13,6 @@ namespace Game.Actions
         [SerializeField] private float rotateSpeed = 10f;
         [SerializeField] private float moveSpeed = 4f;
         [SerializeField] private float stoppingDistance = .1f;
-        [SerializeField] private int maxMoveDistance = 2;
 
         private Vector3 targetPosition;
 
@@ -42,21 +41,21 @@ namespace Game.Actions
             return false;
         }
 
-        public override void StartAction(BaseActionParameters baseParams)
+        public override bool StartAction(BaseActionParameters baseParams)
         {
-            base.StartAction(baseParams);
             targetPosition = LevelGrid.Instance.GetWorldPositon(baseParams.gridPosition);
+            return base.StartAction(baseParams);
         }
 
-        public override bool IsValidActionGridPositon(GridPosition gridPosition)
+        public override bool IsValidActionGridPositon(BaseActionParameters args)
         {
             if (LevelGrid.Instance.IsUnitInsideTheGrid(unit))
             {
-                return base.IsValidActionGridPositon(gridPosition);
+                return base.IsValidActionGridPositon(args);
             }
             else
             {
-                return !LevelGrid.Instance.IsValidGridPosition(gridPosition) || LevelGrid.Instance.IsGridBorder(gridPosition);
+                return !LevelGrid.Instance.IsValidGridPosition(args.gridPosition) || LevelGrid.Instance.IsGridBorder(args.gridPosition);
             }
         }
 
@@ -64,10 +63,11 @@ namespace Game.Actions
         {
             List<GridPosition> validGridPositions = new List<GridPosition>();
             GridPosition unitGridPosition = unit.GetGridPosition();
+            int availablePoints = GetPossibleActionsCount();
 
-            for (int x = -maxMoveDistance; x <= maxMoveDistance; x++)
+            for (int x = -availablePoints; x <= availablePoints; x++)
             {
-                for (int z = -maxMoveDistance; z <= maxMoveDistance; z++)
+                for (int z = -availablePoints; z <= availablePoints; z++)
                 {
                     GridPosition offsetGridPosition = new GridPosition(x, z);
                     GridPosition testGridPosition = unitGridPosition + offsetGridPosition;
@@ -76,12 +76,18 @@ namespace Game.Actions
                     if (!LevelGrid.Instance.IsValidGridPosition(testGridPosition)) continue;
                     if (LevelGrid.Instance.HasAnyUnitOnGridPosition(testGridPosition)) continue;
                     if (!LevelGrid.Instance.IsUnitInsideTheGrid(unit) && !LevelGrid.Instance.IsGridBorder(testGridPosition)) continue;
+                    if (!CanSpendActionPoints(new BaseActionParameters() { gridPosition = testGridPosition })) continue;
 
                     validGridPositions.Add(testGridPosition);
                 }
             }
 
             return validGridPositions;
+        }
+
+        public override float GetActionPointCost(BaseActionParameters args)
+        {
+            return base.GetActionPointCost(args) * GridPosition.Distance(unit.GetGridPosition(), args.gridPosition);
         }
 
         public override string GetActionName()

@@ -56,5 +56,12 @@ namespace Game.Grid
         {
             return new GridPosition(a.x - b.x, a.z - b.z);
         }
+
+        public static float Distance(GridPosition from, GridPosition to)
+        {
+            GridPosition dPos = to - from;
+            float distance = Mathf.Sqrt(dPos.x * dPos.x + dPos.z * dPos.z);
+            return distance;
+        }
     }
 }
