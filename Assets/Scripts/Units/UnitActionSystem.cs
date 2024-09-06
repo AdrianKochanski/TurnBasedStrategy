@@ -108,11 +108,8 @@ namespace Game.Units
         {
             foreach (var action in selectedUnit.GetBaseActions())
             {
-                if(!action.IsActionSetup())
-                {
-                    action.onActionBegin += SetBusy;
-                    action.onActionComplete += ClearBusy;
-                }
+                action.onActionBegin += SetBusy;
+                action.onActionComplete += ClearBusy;
             }
         }
 

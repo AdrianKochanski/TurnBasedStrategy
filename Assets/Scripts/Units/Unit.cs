@@ -1,4 +1,5 @@
 using Game.Actions;
+using Game.Core;
 using Game.Grid;
 using System;
 using System.Collections.Generic;
@@ -14,19 +15,22 @@ namespace Game.Units
         [SerializeField] private bool isEnemy = false;
 
         private GridPosition gridPosition;
-
         private BaseAction[] baseActions;
+        private HealthSystem healthSystem;
 
         private void Awake()
         {
             baseActions = GetComponents<BaseAction>();
+            healthSystem = GetComponent<HealthSystem>();
         }
 
         private void Start()
         {
             gridPosition = LevelGrid.Instance.GetGridPosition(transform.position);
             LevelGrid.Instance.AddUnitAtGridPosition(gridPosition, this);
+            healthSystem.OnDead += HealthSystem_OnDead;
         }
+
 
         private void Update()
         {
@@ -48,6 +52,12 @@ namespace Game.Units
             return GetInstanceID() == other.GetInstanceID();
         }
 
+        private void HealthSystem_OnDead()
+        {
+            LevelGrid.Instance.RemoveUnitAtGridPosition(gridPosition, this);
+            Destroy(gameObject);
+        }
+
         public override int GetHashCode()
         {
             return HashCode.Combine(GetInstanceID());
@@ -58,9 +68,23 @@ namespace Game.Units
             return gridPosition;
         }
 
+        public Vector3 GetWorldPositon() => LevelGrid.Instance.GetWorldPositon(gridPosition);
+
         public IEnumerable<BaseAction> GetBaseActions()
         {
             return baseActions;
+        }
+
+        public int GetActionPoints()
+        {
+            int points = 0;
+
+            foreach (BaseAction action in baseActions) 
+            { 
+                if(action.GetPossibleActionsCount() > 0) { points++; };
+            }
+
+            return points;
         }
 
         public bool IsEnemy()
@@ -68,9 +92,7 @@ namespace Game.Units
             return isEnemy; 
         }
 
-        public void Damage()
-        {
-            Debug.Log(transform + " damaged!");
-        }
+        public void Damage(int damageAmount) => healthSystem.Damage(damageAmount);
+        public bool IsDead() => healthSystem.IsDead();
     }
 }

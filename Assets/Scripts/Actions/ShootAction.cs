@@ -15,6 +15,8 @@ namespace Game.Actions
         [SerializeField] private float cooloffStateTime = .5f;
         [SerializeField] private float rotateAimingSpeed = 10f;
 
+        public event Action<Unit, Unit> OnShoot;
+
         private State state;
         private float stateTimer;
         private Unit targetUnit;
@@ -63,7 +65,8 @@ namespace Game.Actions
 
         private void Shoot()
         {
-            targetUnit?.Damage();
+            OnShoot?.Invoke(unit, targetUnit);
+            //targetUnit?.Damage();
         }
 
         private bool NextState()
@@ -109,7 +112,7 @@ namespace Game.Actions
                         GridPosition testGridPosition = unitGridPosition + offsetGridPosition;
 
                         if (!LevelGrid.Instance.IsValidGridPosition(testGridPosition)) continue;
-                        if (!LevelGrid.Instance.TryGetUnitAtGridPosition(testGridPosition, out Unit unit) || !unit.IsEnemy()) continue;
+                        if (!LevelGrid.Instance.TryGetUnitAtGridPosition(testGridPosition, out Unit unit) || !unit.IsEnemy() || unit.IsDead()) continue;
                         float distance = GridPosition.Distance(unit.GetGridPosition(), testGridPosition);
                         if (Mathf.RoundToInt(distance) > maxShootDistance) continue;
 

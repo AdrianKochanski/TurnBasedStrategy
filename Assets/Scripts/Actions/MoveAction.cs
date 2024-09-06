@@ -1,17 +1,18 @@
 using Game.Grid;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.EventSystems;
 
 namespace Game.Actions
 {
     public class MoveAction : BaseAction
     {
-        [SerializeField] private Animator unitAnimator;
         [SerializeField] private float rotateSpeed = 10f;
         [SerializeField] private float moveSpeed = 4f;
         [SerializeField] private float stoppingDistance = .1f;
 
+        public event Action OnStartMoving;
+        public event Action OnStopMoving;
 
         public override bool UpdateAction(BaseActionParameters args)
         {
@@ -20,11 +21,11 @@ namespace Game.Actions
             if (Vector3.Distance(transform.position, targetPosition) > stoppingDistance)
             {
                 transform.position += moveDirection * moveSpeed * Time.deltaTime;
-                unitAnimator.SetBool("IsWalking", true);
+                OnStartMoving?.Invoke();
             }
             else
             {
-                unitAnimator.SetBool("IsWalking", false);
+                OnStopMoving?.Invoke();
                 return true;
             }
 

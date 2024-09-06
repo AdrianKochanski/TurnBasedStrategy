@@ -22,6 +22,11 @@ namespace Game.Units
             UpdateVisual(UnitActionSystem.Instance.GetSelectedUnit());
         }
 
+        private void OnDestroy()
+        {
+            UnitActionSystem.Instance.OnSelectedUnitChange -= UnitActionSystem_OnSelectedUnitChange;
+        }
+
         private void UnitActionSystem_OnSelectedUnitChange(Unit selectedUnit)
         {
             UpdateVisual(selectedUnit);

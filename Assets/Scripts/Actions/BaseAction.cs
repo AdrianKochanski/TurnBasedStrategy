@@ -77,11 +77,6 @@ namespace Game.Actions
             StartAction(null);
         }
 
-        public bool IsActionSetup()
-        {
-            return onActionBegin != null && onActionComplete != null;
-        }
-
         public virtual bool IsValidActionGridPositon(BaseActionParameters args)
         {
             IEnumerable<GridPosition> validGridPositions = GetValidActionGridPositions();
