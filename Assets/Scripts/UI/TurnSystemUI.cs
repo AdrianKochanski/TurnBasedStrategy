@@ -16,7 +16,7 @@ namespace Game.UI
         private void Start()
         {
             turnButton.onClick.AddListener(() => TurnSystem.Instance.NextTurn());
-            TurnSystem.Instance.onTurnChange += TurnSystem_OnTurnChange;
+            TurnSystem.Instance.OnTurnChange += TurnSystem_OnTurnChange;
             TurnSystem.Instance.onPlayerChange += TurnSystem_OnPlayerChange;
         }
 

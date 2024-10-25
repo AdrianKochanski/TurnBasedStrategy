@@ -5,6 +5,7 @@ using Game.Grid;
 using System.Collections.Generic;
 using System.Linq;
 using Game.Core;
+using static Game.Grid.GridSystemVisual;
 
 namespace Game.Actions
 {
@@ -14,15 +15,24 @@ namespace Game.Actions
         [SerializeField, Min(1f)] protected float costPointRate = 1;
         [SerializeField] protected float restorePointTurnRate = 1;
         [SerializeField] protected float maxPointLimit = 3;
+        [SerializeField] protected GridVisualType targetVisualType = GridVisualType.White;
+        [SerializeField] protected int range = 6;
+        [SerializeField] protected GridVisualType rangeVisualType = GridVisualType.Yellow;
 
         protected Unit unit;
         private bool isActive;
-        protected Vector3 targetPosition;
-        private BaseActionParameters args;
+        protected List<(GridPosition, float)> targetPositions;
+        private int currentTargetPositionIdx;
+        private float pointsSnapshot = 0;
 
+        public static event Action<BaseAction> OnAnyActionBegin;
+        public static event Action<BaseAction> OnAnyActionGridUpdate;
+        public static event Action<BaseAction> OnAnyActionComplete;
         public event Action onActionBegin;
         public event Action onActionComplete;
-        public event Action onRestorePoints;
+        public event Action OnRestorePoints;
+
+        private Dictionary<GridVisualType, List<(GridPosition, float)>> actionGridPositions = new Dictionary<GridVisualType, List<(GridPosition, float)>>();
 
         protected virtual void Awake()
         {
@@ -31,17 +41,25 @@ namespace Game.Actions
 
         protected virtual void Start()
         {
-            TurnSystem.Instance.onTurnChange += TurnSystem_OnTurnChange;
+            TurnSystem.Instance.OnTurnChange += TurnSystem_OnTurnChange;
         }
 
         protected void Update() 
         { 
             if (!isActive) return;
 
-            if(UpdateAction(args))
+            if(UpdateAction())
             {
-                isActive = false;
-                onActionComplete?.Invoke();
+                UpdateActionPoints();
+                currentTargetPositionIdx++;
+                UpdateActionGridPositions();
+
+                if (currentTargetPositionIdx >= targetPositions.Count)
+                {
+                    isActive = false;
+                    onActionComplete?.Invoke();
+                    OnAnyActionComplete?.Invoke(this);
+                }
             }
         }
 
@@ -49,38 +67,96 @@ namespace Game.Actions
         {
             points += restorePointTurnRate;
             points = MathF.Min(points, maxPointLimit);
-            onRestorePoints?.Invoke();
+            OnRestorePoints?.Invoke();
         }
 
-        public abstract bool UpdateAction(BaseActionParameters args);
+        public abstract bool UpdateAction();
         public abstract string GetActionName();
-        public abstract IEnumerable<GridPosition> GetValidActionGridPositions();
-
-        public class BaseActionParameters { 
-            internal GridPosition targetGridPosition;
-        }
-
-        public virtual bool StartAction(BaseActionParameters args)
+        public virtual bool TryStartAction(List<GridPosition> targetGridPositions)
         {
-            if (!CanSpendActionPoints(args)) return false;
+            targetPositions = FilterValidGridPositions(targetGridPositions).ToList();
 
-            this.args = args;
-            targetPosition = LevelGrid.Instance.GetWorldPositon(args.targetGridPosition);
+            if (targetPositions.Count() <= 0) return false;
+            currentTargetPositionIdx = 0;
+            pointsSnapshot = points;
             onActionBegin?.Invoke();
+            OnAnyActionBegin?.Invoke(this);
             isActive = true;
-            SpendActionPoints(args);
             return true;
         }
 
-        public virtual void StartAction()
+        protected virtual IEnumerable<(GridPosition, float)> FilterValidGridPositions(IEnumerable<GridPosition> targetPositions)
         {
-            StartAction(null);
+            var validPositions = GetActionGridPositions(targetVisualType);
+
+            return targetPositions.Where(p => validPositions.Any(t => t.Item1 == p)).Select(p => (
+                p,
+                validPositions.Where(t => t.Item1 == p).FirstOrDefault().Item2
+            ));
         }
 
-        public virtual bool IsValidActionGridPositon(BaseActionParameters args)
+        public IEnumerable<(GridPosition, float)> GetActionGridPositions(GridVisualType visualType)
         {
-            IEnumerable<GridPosition> validGridPositions = GetValidActionGridPositions();
-            return validGridPositions.Contains(args.targetGridPosition);
+            return actionGridPositions.ContainsKey(visualType) ? actionGridPositions[visualType] : Enumerable.Empty<(GridPosition, float)>();
+        }
+
+        public Dictionary<GridVisualType, List<(GridPosition, float)>> GetActionGridPositions()
+        {
+            return actionGridPositions;
+        }
+
+        public Dictionary<GridVisualType, List<(GridPosition, float)>> UpdateActionGridPositions()
+        {
+            UpdateActionGridPositions(unit.GetGridPosition());
+            return actionGridPositions;
+        }
+
+        public void UpdateActionGridPositions(GridPosition unitPosition)
+        {
+            actionGridPositions = new Dictionary<GridVisualType, List<(GridPosition, float)>>() {
+                { rangeVisualType, new List<(GridPosition, float)>() }
+            };
+            bool twoDimension = rangeVisualType != targetVisualType;
+
+            if (twoDimension) {
+                actionGridPositions.Add(targetVisualType, new List<(GridPosition, float)>());
+            }
+
+            for (int x = -range; x <= range; x++)
+            {
+                for (int z = -range; z <= range; z++)
+                {
+                    GridPosition offsetGridPosition = new GridPosition(x, z);
+                    GridPosition testGridPosition = unitPosition + offsetGridPosition;
+
+                    float distance = GridPosition.Distance(unitPosition, testGridPosition);
+                    if (Mathf.RoundToInt(distance) > range) continue;
+                    if (!IsValidGridPosition(testGridPosition, out float cost)) continue;
+                    var actualCost = GetActionPointCost(cost);
+
+                    if (!CanSpendMaxActionPoints(actualCost)) continue;
+                    if (twoDimension)
+                    {
+                        actionGridPositions[rangeVisualType].Add((testGridPosition, actualCost));
+                    }
+
+                    if (!CanSpendActionPoints(actualCost)) continue;
+                    actionGridPositions[targetVisualType].Add((testGridPosition, actualCost));
+                }
+            }
+
+            OnAnyActionGridUpdate?.Invoke(this);
+        }
+
+        public virtual bool IsValidGridPosition(GridPosition targetPosition, out float cost)
+        {
+            cost = 1;
+            return LevelGrid.Instance.IsValidGridPosition(targetPosition);
+        }
+
+        public int GetTargetGridPositonCount()
+        {
+            return GetActionGridPositions(targetVisualType).Count();
         }
 
         public int GetPossibleActionsCount()
@@ -93,24 +169,66 @@ namespace Game.Actions
             return Mathf.FloorToInt(maxPointLimit / costPointRate);
         }
 
-        public bool CanSpendActionPoints(BaseActionParameters args)
-        {
-            return points >= GetActionPointCost(args);
-        }
-
-        public virtual float GetActionPointCost(BaseActionParameters args)
-        {
-            return costPointRate;
-        }
-
         public virtual float GetRestoreActionTurnRate()
         {
             return restorePointTurnRate / costPointRate;
         }
 
-        protected void SpendActionPoints(BaseActionParameters args)
+        protected void UpdateActionPoints()
         {
-            points -= GetActionPointCost(args);
+            points = pointsSnapshot - GetActionPointCost(CurrentTargetPosition());
+        }
+
+        public virtual float GetActionPointCost(float cost)
+        {
+            return costPointRate * cost;
+        }
+
+        protected bool CanSpendActionPoints(float cost)
+        {
+            return points >= cost;
+        }
+
+        protected bool CanSpendMaxActionPoints(float cost)
+        {
+            return maxPointLimit >= cost;
+        }
+
+        public Unit GetUnit()
+        {
+            return unit;
+        }
+
+        public abstract EnemyAIAction GetEnemyAIAction(GridPosition gridPosition);
+
+        protected GridPosition CurrentTargetPosition()
+        {
+            return targetPositions[currentTargetPositionIdx].Item1;
+        }
+
+        protected Vector3 CurrentTargetVectorPosition()
+        {
+            return LevelGrid.Instance.GetWorldPositon(CurrentTargetPosition());
+        }
+
+        protected float GetActionPointCost(GridPosition targetGridPosition)
+        {
+            var targetVisual = targetPositions.Where(p => p.Item1 == targetGridPosition).FirstOrDefault();
+            return targetVisual.Item2;
+        }
+
+        public EnemyAIAction GetBestEnemyAIAction()
+        {
+            List<EnemyAIAction> enemyAIActions = new List<EnemyAIAction>();
+
+            UpdateActionGridPositions();
+            foreach (var gridPosition in GetActionGridPositions(targetVisualType))
+            {
+                EnemyAIAction enemyAIAction = GetEnemyAIAction(gridPosition.Item1);
+                enemyAIActions.Add(enemyAIAction);
+            }
+
+            return enemyAIActions.OrderByDescending(a => a.actionValue).FirstOrDefault();
         }
     }
 }

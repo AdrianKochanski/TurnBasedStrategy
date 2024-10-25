@@ -5,25 +5,25 @@ using UnityEngine;
 
 namespace Game.Grid
 {
-    public class GridSystem
+    public class GridSystem<TGridObject>
     {
         private int width;
         private int height;
         private float cellSize;
-        private GridObject[,] gridObjectMap;
+        private TGridObject[,] gridObjectMap;
 
-        public GridSystem(int width, int height, float cellSize)
+        public GridSystem(int width, int height, float cellSize, Func<GridSystem<TGridObject>, GridPosition, TGridObject> createGridObject)
         {
             this.width = width;
             this.height = height;
             this.cellSize = cellSize;
-            gridObjectMap = new GridObject[width, height];
+            gridObjectMap = new TGridObject[width, height];
 
             for (int x = 0; x < width; x++)
             {
                 for (int z = 0; z < height; z++)
                 {
-                    gridObjectMap[x, z] = new GridObject(this, new GridPosition(x, z));
+                    gridObjectMap[x, z] = createGridObject(this, new GridPosition(x, z));
                 }
             }
         }
@@ -50,7 +50,7 @@ namespace Game.Grid
                     GridPosition gridPosition = new GridPosition(x, z);
                     Transform gridObjectInstance = GameObject.Instantiate(debugPrefab, GetWorldPositon(gridPosition), Quaternion.identity, parent);
                     
-                    if(gridObjectInstance.TryGetComponent(out GridDebugObject gridDebugObject) && TryGetGridObject(gridPosition, out GridObject gridObject))
+                    if(gridObjectInstance.TryGetComponent(out GridDebugObject gridDebugObject) && TryGetGridObject(gridPosition, out TGridObject gridObject))
                     {
                         gridDebugObject.SetGridObject(gridObject);
                     }
@@ -58,9 +58,9 @@ namespace Game.Grid
             }
         }
 
-        public bool TryGetGridObject(GridPosition gridPosition, out GridObject gridObject)
+        public bool TryGetGridObject(GridPosition gridPosition, out TGridObject gridObject)
         {
-            gridObject = null;
+            gridObject = default;
 
             if (gridPosition.x < 0 || gridPosition.x >= gridObjectMap.GetLength(0) ||
                 gridPosition.z < 0 || gridPosition.z >= gridObjectMap.GetLength(1))
@@ -88,14 +88,19 @@ namespace Game.Grid
                 || gridPosition.z == height - 1;
         }
 
-        public int GetWidth()
-        {
-            return width;
-        }
+        //public int GetWidth()
+        //{
+        //    return width;
+        //}
 
-        public int GetHeight()
-        {
-            return height;
-        }
+        //public int GetHeight()
+        //{
+        //    return height;
+        //}
+
+        //public float GetCellSize()
+        //{
+        //    return cellSize;
+        //}
     }
 }

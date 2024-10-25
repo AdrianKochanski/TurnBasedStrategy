@@ -3,6 +3,8 @@ using Game.Core;
 using Game.Grid;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace Game.Units
@@ -18,6 +20,9 @@ namespace Game.Units
         private BaseAction[] baseActions;
         private HealthSystem healthSystem;
 
+        public static event Action<Unit> OnAnyUnitSpawned;
+        public static event Action<Unit> OnAnyUnitDead;
+
         private void Awake()
         {
             baseActions = GetComponents<BaseAction>();
@@ -29,8 +34,8 @@ namespace Game.Units
             gridPosition = LevelGrid.Instance.GetGridPosition(transform.position);
             LevelGrid.Instance.AddUnitAtGridPosition(gridPosition, this);
             healthSystem.OnDead += HealthSystem_OnDead;
+            OnAnyUnitSpawned?.Invoke(this);
         }
-
 
         private void Update()
         {
@@ -38,8 +43,9 @@ namespace Game.Units
             GridPosition newGridPosition = LevelGrid.Instance.GetGridPosition(transform.position);
             if (newGridPosition != gridPosition)
             {
-                LevelGrid.Instance.UnitMovedGridPosition(this, gridPosition, newGridPosition);
+                GridPosition oldGridPosition = gridPosition;
                 gridPosition = newGridPosition;
+                LevelGrid.Instance.UnitMovedGridPosition(this, oldGridPosition, newGridPosition);
             }
         }
 
@@ -56,6 +62,7 @@ namespace Game.Units
         {
             LevelGrid.Instance.RemoveUnitAtGridPosition(gridPosition, this);
             Destroy(gameObject);
+            OnAnyUnitDead?.Invoke(this);
         }
 
         public override int GetHashCode()
@@ -66,6 +73,11 @@ namespace Game.Units
         public GridPosition GetGridPosition()
         {
             return gridPosition;
+        }
+
+        public T GetAction<T>() where T : BaseAction
+        {
+            return baseActions.OfType<T>().FirstOrDefault();
         }
 
         public Vector3 GetWorldPositon() => LevelGrid.Instance.GetWorldPositon(gridPosition);
@@ -94,5 +106,6 @@ namespace Game.Units
 
         public void Damage(int damageAmount) => healthSystem.Damage(damageAmount);
         public bool IsDead() => healthSystem.IsDead();
+        public float GetHealthNormalized() => healthSystem.GetHealthNormalized();
     }
 }

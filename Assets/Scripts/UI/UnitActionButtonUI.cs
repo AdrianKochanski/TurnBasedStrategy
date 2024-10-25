@@ -34,7 +34,7 @@ namespace Game.UI
             });
             UpdateActionCountText();
             UpdateActionRestoreCountText();
-            baseAction.onRestorePoints += BaseAction_OnRestorePoints;
+            baseAction.OnRestorePoints += BaseAction_OnRestorePoints;
         }
 
         private void BaseAction_OnRestorePoints()
@@ -47,7 +47,7 @@ namespace Game.UI
         {
             if (baseAction != null)
             {
-                baseAction.onRestorePoints -= BaseAction_OnRestorePoints;
+                baseAction.OnRestorePoints -= BaseAction_OnRestorePoints;
             }
         }
 

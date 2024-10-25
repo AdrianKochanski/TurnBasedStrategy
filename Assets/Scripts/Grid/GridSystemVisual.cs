@@ -1,6 +1,9 @@
 using Game.Actions;
+using Game.Core;
 using Game.Units;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Game.Grid
@@ -8,17 +11,51 @@ namespace Game.Grid
     public class GridSystemVisual : MonoBehaviour
     {
         [SerializeField] GridPositionVisual GridPositionVisualPrefab;
+        [SerializeField] List<GridVisualTypeMaterial> gridVisualTypeMaterials;
+
+        [Serializable]
+        public struct GridVisualTypeMaterial
+        {
+            public GridVisualType gridVisualType;
+            public Material material;
+        }
+
+        [Serializable]
+        public enum GridVisualType
+        {
+            White,
+            Blue,
+            Red,
+            Yellow,
+            Green,
+            RedSoft
+        }
 
         private GridPositionVisual[,] gridPositionVisuals;
+
 
         private void Start()
         {
             InitalizeGridVisual();
+            UnitActionSystem.Instance.OnSelectedActionChange += UnitActionSystem_OnSelectedActionChange;
+            TurnSystem.Instance.OnTurnChange += TurnSystem_OnTurnChange;
+            BaseAction.OnAnyActionGridUpdate += BaseAction_OnAnyActionGridUpdate;
+            UpdateActionGrid();
         }
 
-        private void Update()
+        private void UnitActionSystem_OnSelectedActionChange(BaseAction action)
         {
-            UpdateGridVisual();
+            UpdateActionGrid();
+        }
+
+        private void TurnSystem_OnTurnChange(int turnNumber)
+        {
+            UpdateActionGrid();
+        }
+
+        private void BaseAction_OnAnyActionGridUpdate(BaseAction action)
+        {
+            UpdateGridPositionVisuals(action.GetActionGridPositions());
         }
 
         public void HideAllGridPosition()
@@ -26,13 +63,13 @@ namespace Game.Grid
             foreach (var gridPosition in gridPositionVisuals) gridPosition.Hide();
         }
 
-        public void ShowGridPositionList(IEnumerable<GridPosition> gridPositionList)
+        public void ShowGridPositionList(IEnumerable<GridPosition> gridPositionList, GridVisualType gridVisualType)
         {
             foreach (GridPosition gridPosition in gridPositionList) 
             {
                 if(LevelGrid.Instance.IsValidGridPosition(gridPosition))
                 {
-                    gridPositionVisuals[gridPosition.x, gridPosition.z].Show();
+                    gridPositionVisuals[gridPosition.x, gridPosition.z].Show(GetGridVisualTypeMaterial(gridVisualType));
                 }
             }
         }
@@ -61,11 +98,28 @@ namespace Game.Grid
             }
         }
 
-        private void UpdateGridVisual()
+        private void UpdateActionGrid()
+        {
+            BaseAction selectedAction = UnitActionSystem.Instance.GetSelectedAction();
+            selectedAction.UpdateActionGridPositions();
+        }
+
+        private void UpdateGridPositionVisuals(Dictionary<GridVisualType, List<(GridPosition, float)>> actionGridPositions)
         {
             HideAllGridPosition();
-            BaseAction selectedAction = UnitActionSystem.Instance.GetSelectedAction();
-            ShowGridPositionList(selectedAction.GetValidActionGridPositions());
+            foreach (var gridPositionsList in actionGridPositions) { 
+                ShowGridPositionList(gridPositionsList.Value.Select(i => i.Item1), gridPositionsList.Key);
+            }
+        }
+
+        private Material GetGridVisualTypeMaterial(GridVisualType gridVisualType)
+        {
+            Material gridVisualMaterial = gridVisualTypeMaterials.Where(g => g.gridVisualType == gridVisualType).Select(g => g.material).FirstOrDefault();
+            if (gridVisualMaterial == null)
+            {
+                Debug.LogError($"Could not find GridVisualTypeMaterial for GridVisualType {gridVisualType}");
+            }
+            return gridVisualMaterial;
         }
     }
 }

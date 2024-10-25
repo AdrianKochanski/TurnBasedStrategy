@@ -1,4 +1,5 @@
 using Game.Grid;
+using Game.Units;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -11,13 +12,13 @@ namespace Game.Actions
 
         private float totalSpinAmount = 0;
 
-        public override bool StartAction(BaseActionParameters baseParams)
+        public override bool TryStartAction(List<GridPosition> targetGridPositions)
         {
             totalSpinAmount = 0;
-            return base.StartAction(baseParams);
+            return base.TryStartAction(targetGridPositions);
         }
 
-        public override bool UpdateAction(BaseActionParameters args)
+        public override bool UpdateAction()
         {
             float spinToAdd = spinSpeed * Time.deltaTime;
             transform.eulerAngles += new Vector3(0, spinToAdd, 0);
@@ -31,21 +32,24 @@ namespace Game.Actions
             return false;
         }
 
-        public override IEnumerable<GridPosition> GetValidActionGridPositions()
+        public override bool IsValidGridPosition(GridPosition targetPosition, out float cost)
         {
-            List<GridPosition> validGridPositionList = new List<GridPosition>();
-
-            if (LevelGrid.Instance.IsValidGridPosition(unit.GetGridPosition()))
-            {
-                validGridPositionList.Add(unit.GetGridPosition());
-            }
-
-            return validGridPositionList;
+            return base.IsValidGridPosition(targetPosition, out cost);
         }
 
         public override string GetActionName()
         {
             return "SPIN";
+        }
+
+        public override EnemyAIAction GetEnemyAIAction(GridPosition gridPosition)
+        {
+            return new EnemyAIAction()
+            {
+                action = this,
+                gridPosition = gridPosition,
+                actionValue = 0
+            };
         }
     }
 }

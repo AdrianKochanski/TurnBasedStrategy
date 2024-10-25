@@ -10,10 +10,18 @@ namespace Game.Core
         [SerializeField] private int health = 100;
 
         public event Action OnDead;
+        public event Action OnDamaged;
+        private int healthMax;
+
+        private void Awake()
+        {
+            healthMax = health;
+        }
 
         public void Damage(int damageAmount)
         {
             health -= damageAmount;
+            OnDamaged?.Invoke();
 
             if (health <= 0)
             {
@@ -30,6 +38,11 @@ namespace Game.Core
         public bool IsDead()
         {
             return health <= 0; 
+        }
+
+        public float GetHealthNormalized()
+        {
+            return (float)health / healthMax;
         }
     }
 }

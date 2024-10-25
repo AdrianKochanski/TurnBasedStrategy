@@ -16,8 +16,8 @@ namespace Game.Units
         {
             if(TryGetComponent(out MoveAction moveAction))
             {
-                moveAction.OnStartMoving += MoveAction_StartMoving;
-                moveAction.OnStopMoving += MoveAction_StopMoving;
+                moveAction.onActionBegin += MoveAction_StartMoving;
+                moveAction.onActionComplete += MoveAction_StopMoving;
             }
 
             if (TryGetComponent(out ShootAction shootAction))

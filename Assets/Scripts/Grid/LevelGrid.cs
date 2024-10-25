@@ -1,3 +1,4 @@
+using Game.Core;
 using Game.Units;
 using System;
 using System.Collections;
@@ -16,7 +17,9 @@ namespace Game.Grid
         [SerializeField] private float cellSize = 2f;
         [SerializeField] private Transform gridObjectPrefab;
 
-        private GridSystem gridSystem;
+        //public event Action OnAnyUnitMovedGridPosition;
+
+        private GridSystem<GridObject> gridSystem;
 
         private void Awake()
         {
@@ -28,8 +31,13 @@ namespace Game.Grid
             }
             Instance = this;
 
-            gridSystem = new GridSystem(width, height, cellSize);
-            gridSystem.CreateDebugObjects(gridObjectPrefab, transform);
+            gridSystem = new GridSystem<GridObject>(width, height, cellSize, (gS, gP) => new GridObject(gS, gP));
+            //gridSystem.CreateDebugObjects(gridObjectPrefab, transform);
+        }
+
+        private void Start()
+        {
+            Pathfinding.Instance.Setup(width, height, cellSize);
         }
 
         public IEnumerable<Unit> GetUnitListAtGridPosition(GridPosition gridPosition)
@@ -75,14 +83,16 @@ namespace Game.Grid
         {
             RemoveUnitAtGridPosition(fromGridPosition, unit);
             AddUnitAtGridPosition(toGridPosition, unit);
+            //OnAnyUnitMovedGridPosition?.Invoke();
         }
 
         public GridPosition GetGridPosition(Vector3 worldPosition) => gridSystem.GetGridPosition(worldPosition);
         public bool IsValidGridPosition(GridPosition gridPosition) => gridSystem.IsValidGridPosition(gridPosition);
         public bool IsGridBorder(GridPosition gridPosition) => gridSystem.IsGridBorder(gridPosition);
         public Vector3 GetWorldPositon(GridPosition gridPosition) => gridSystem.GetWorldPositon(gridPosition);
-        public int GetWidth() => gridSystem.GetWidth();
-        public int GetHeight() => gridSystem.GetHeight();
+        public int GetWidth() => width;
+        public int GetHeight() => height;
+        public float GetCellSize() => cellSize;
         public bool IsUnitInsideTheGrid(Unit unit) => gridSystem.IsValidGridPosition(unit.GetGridPosition());
 
         public bool HasAnyUnitOnGridPosition(GridPosition gridPosition)

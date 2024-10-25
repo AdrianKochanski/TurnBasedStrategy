@@ -9,14 +9,14 @@ namespace Game.Grid
     {
         [SerializeField] TextMeshPro textMeshProUGUI;
 
-        private GridObject gridObject;
+        protected object gridObject;
 
-        public void SetGridObject(GridObject gridObject)
+        public virtual void SetGridObject(object gridObject)
         {
             this.gridObject = gridObject;
         }
 
-        private void Update()
+        protected virtual void Update()
         {
             textMeshProUGUI.text = gridObject.ToString();
         }

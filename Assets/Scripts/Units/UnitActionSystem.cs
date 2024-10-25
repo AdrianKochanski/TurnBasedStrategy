@@ -2,7 +2,9 @@ using Game.Actions;
 using Game.Core;
 using Game.Grid;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using static Game.Actions.BaseAction;
@@ -36,6 +38,8 @@ namespace Game.Units
         private void Start()
         {
             SetSelectedUnit(selectedUnit);
+            BaseAction.OnAnyActionBegin += BaseAction_OnAnyActionBegin;
+            BaseAction.OnAnyActionComplete += BaseAction_OnAnyActionComplete;
         }
 
         private void Update()
@@ -68,13 +72,13 @@ namespace Game.Units
             return selectedAction;
         }
 
-        private void SetBusy()
+        private void BaseAction_OnAnyActionBegin(BaseAction action)
         {
             isBusy = true;
             OnBusyChange?.Invoke(isBusy);
         }
 
-        private void ClearBusy()
+        private void BaseAction_OnAnyActionComplete(BaseAction action)
         {
             isBusy = false;
             OnBusyChange?.Invoke(isBusy);
@@ -99,18 +103,8 @@ namespace Game.Units
         private void SetSelectedUnit(Unit unit)
         {
             selectedUnit = unit;
-            SetSelectedAction(unit.GetBaseActions().First());
-            SetupUnitAction();
+            SetSelectedAction(unit.GetAction<MoveAction>());
             OnSelectedUnitChange?.Invoke(unit);
-        }
-
-        private void SetupUnitAction()
-        {
-            foreach (var action in selectedUnit.GetBaseActions())
-            {
-                action.onActionBegin += SetBusy;
-                action.onActionComplete += ClearBusy;
-            }
         }
 
         private void HandleSelectedAction()
@@ -119,17 +113,14 @@ namespace Game.Units
             bool newPositionFound = MouseWorld.TryGetPosition(out Vector3 mousePosition);
             if (newPositionFound) gridPosition = LevelGrid.Instance.GetGridPosition(mousePosition);
 
-            if(selectedAction.IsValidActionGridPositon(new BaseActionParameters() { targetGridPosition = gridPosition }))
+            switch (selectedAction)
             {
-                switch (selectedAction)
-                {
-                    case MoveAction moveAction:
-                        moveAction.StartAction(new BaseActionParameters() { targetGridPosition = gridPosition });
-                        break;
-                    default:
-                        selectedAction.StartAction(new BaseActionParameters() { targetGridPosition = gridPosition });
-                        break;
-                }
+                case MoveAction moveAction:
+                    moveAction.TryStartAction(new List<GridPosition> { gridPosition });
+                    break;
+                default:
+                    selectedAction.TryStartAction(new List<GridPosition> { gridPosition });
+                    break;
             }
         }
     }

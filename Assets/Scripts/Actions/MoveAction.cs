@@ -1,6 +1,10 @@
+using Game.Core;
 using Game.Grid;
+using Game.Units;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using TMPro;
 using UnityEngine;
 
 namespace Game.Actions
@@ -11,74 +15,57 @@ namespace Game.Actions
         [SerializeField] private float moveSpeed = 4f;
         [SerializeField] private float stoppingDistance = .1f;
 
-        public event Action OnStartMoving;
-        public event Action OnStopMoving;
 
-        public override bool UpdateAction(BaseActionParameters args)
+        public override bool UpdateAction()
         {
+            Vector3 targetPosition = CurrentTargetVectorPosition();
             Vector3 moveDirection = (targetPosition - transform.position).normalized;
+            transform.forward = Vector3.Lerp(transform.forward, moveDirection, rotateSpeed * Time.deltaTime);
 
             if (Vector3.Distance(transform.position, targetPosition) > stoppingDistance)
             {
                 transform.position += moveDirection * moveSpeed * Time.deltaTime;
-                OnStartMoving?.Invoke();
             }
             else
             {
-                OnStopMoving?.Invoke();
                 return true;
             }
 
-            transform.forward = Vector3.Lerp(transform.forward, moveDirection, rotateSpeed * Time.deltaTime);
             return false;
         }
 
-        public override bool IsValidActionGridPositon(BaseActionParameters args)
+        public override bool TryStartAction(List<GridPosition> targetGridPositions)
         {
-            if (LevelGrid.Instance.IsUnitInsideTheGrid(unit))
-            {
-                return base.IsValidActionGridPositon(args);
-            }
-            else
-            {
-                return !LevelGrid.Instance.IsValidGridPosition(args.targetGridPosition) || LevelGrid.Instance.IsGridBorder(args.targetGridPosition);
-            }
+            targetGridPositions = targetGridPositions.SelectMany(p => Pathfinding.Instance.FindPath(unit.GetGridPosition(), p, out int pathLength)).ToList();
+            return base.TryStartAction(targetGridPositions);
         }
 
-        public override IEnumerable<GridPosition> GetValidActionGridPositions()
+        public override bool IsValidGridPosition(GridPosition targetPosition, out float cost)
         {
-            List<GridPosition> validGridPositions = new List<GridPosition>();
-            GridPosition unitGridPosition = unit.GetGridPosition();
-            int availablePoints = GetPossibleActionsCount();
+            if (!base.IsValidGridPosition(targetPosition, out cost)) return false;
+            if (!LevelGrid.Instance.IsUnitInsideTheGrid(unit)) return false;
+            if (LevelGrid.Instance.HasAnyUnitOnGridPosition(targetPosition)) return false;
+            if (!Pathfinding.Instance.IsWalkableGridPosition(targetPosition)) return false;
+            if (!Pathfinding.Instance.HasPath(unit.GetGridPosition(), targetPosition, out int pathLength)) return false;
 
-            for (int x = -availablePoints; x <= availablePoints; x++)
-            {
-                for (int z = -availablePoints; z <= availablePoints; z++)
-                {
-                    GridPosition offsetGridPosition = new GridPosition(x, z);
-                    GridPosition testGridPosition = unitGridPosition + offsetGridPosition;
-
-                    if (unitGridPosition == testGridPosition) continue;
-                    if (!LevelGrid.Instance.IsValidGridPosition(testGridPosition)) continue;
-                    if (LevelGrid.Instance.HasAnyUnitOnGridPosition(testGridPosition)) continue;
-                    if (!LevelGrid.Instance.IsUnitInsideTheGrid(unit) && !LevelGrid.Instance.IsGridBorder(testGridPosition)) continue;
-                    if (!CanSpendActionPoints(new BaseActionParameters() { targetGridPosition = testGridPosition })) continue;
-
-                    validGridPositions.Add(testGridPosition);
-                }
-            }
-
-            return validGridPositions;
-        }
-
-        public override float GetActionPointCost(BaseActionParameters args)
-        {
-            return base.GetActionPointCost(args) * GridPosition.Distance(unit.GetGridPosition(), args.targetGridPosition);
+            cost = (float)pathLength / (float)Pathfinding.Instance.GetMoveCost();
+            return true;
         }
 
         public override string GetActionName()
         {
             return "MOVE";
+        }
+
+        public override EnemyAIAction GetEnemyAIAction(GridPosition gridPosition)
+        {
+            ShootAction shootAction = unit.GetAction<ShootAction>();
+            return new EnemyAIAction()
+            {
+                action = this,
+                gridPosition = gridPosition,
+                actionValue = shootAction.GetTargetGridPositonCount() * 10
+            };
         }
     }
 }

@@ -12,7 +12,7 @@ namespace Game.Core
 
         private int turnNumber = 1;
         private bool isPlayerTurn = true;
-        public event Action<int> onTurnChange;
+        public event Action<int> OnTurnChange;
         public event Action<bool> onPlayerChange;
 
         private void Awake()
@@ -32,7 +32,7 @@ namespace Game.Core
             if (!isPlayerTurn)
             {
                 turnNumber++;
-                onTurnChange?.Invoke(turnNumber);
+                OnTurnChange?.Invoke(turnNumber);
             }
 
             // change Turn for the new player
