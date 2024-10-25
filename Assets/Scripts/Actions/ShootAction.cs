@@ -14,6 +14,7 @@ namespace Game.Actions
         [SerializeField] private float shootingStateTime = .1f;
         [SerializeField] private float cooloffStateTime = .5f;
         [SerializeField] private float rotateAimingSpeed = 10f;
+        [SerializeField] private LayerMask obstaclesLayerMask;
 
         public event Action<Unit, Unit> OnShoot;
 
@@ -96,15 +97,18 @@ namespace Game.Actions
             return base.TryStartAction(targetGridPositions);
         }
 
-        public override bool IsValidGridPosition(GridPosition targetPosition, out float cost)
+        public override (bool, bool) IsValidGridPosition(GridPosition targetPosition, out float cost)
         {
-            if (!base.IsValidGridPosition(targetPosition, out cost)) return false;
-            if (!LevelGrid.Instance.IsUnitInsideTheGrid(unit)) return false;
+            (bool validRange, bool validTarget) = base.IsValidGridPosition(targetPosition, out cost);
+            if (!validRange || !validTarget) return (false, false);
+            if (!LevelGrid.Instance.IsUnitInsideTheGrid(unit)) return (false, false);
+            if (LevelGrid.Instance.RaycastHorizontal(unit.GetGridPosition(), targetPosition, obstaclesLayerMask)) return (false, false);
             if (!LevelGrid.Instance.TryGetUnitAtGridPosition(targetPosition, out Unit testUnit)
                 || (unit.IsEnemy() == testUnit.IsEnemy())
                 || testUnit.IsDead()
-            ) return false;
-            return true;
+            ) return (true, false);
+
+            return (true, true);
         }
 
         public Unit GetTargetUnit()

@@ -88,19 +88,28 @@ namespace Game.Grid
                 || gridPosition.z == height - 1;
         }
 
-        //public int GetWidth()
-        //{
-        //    return width;
-        //}
+        public bool RaycastHorizontal(GridPosition from, GridPosition to, LayerMask layerMask, float? height = 1.7f)
+        {
+            Vector3 fromV = GetWorldPositon(from);
+            Vector3 toV = GetWorldPositon(to);
+            Vector3 direction = toV - fromV;
+            return Physics.Raycast(
+                fromV + Vector3.up * height.Value,
+                direction.normalized,
+                direction.magnitude,
+                layerMask
+            );
+        }
 
-        //public int GetHeight()
-        //{
-        //    return height;
-        //}
-
-        //public float GetCellSize()
-        //{
-        //    return cellSize;
-        //}
+        public bool RaycastVertical(GridPosition from, LayerMask layerMask, float? height = 1f)
+        {
+            Vector3 fromV = GetWorldPositon(from);
+            return Physics.Raycast(
+                fromV + Vector3.down * height.Value,
+                Vector3.up,
+                height.Value * 2,
+                layerMask
+            );
+        }
     }
 }

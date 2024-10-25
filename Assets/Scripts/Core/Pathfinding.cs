@@ -46,9 +46,8 @@ namespace Game.Core
                 for (int z = 0; z < height; z++)
                 {
                     GridPosition gridPosition = new GridPosition(x, z);
-                    Vector3 worldPosition = LevelGrid.Instance.GetWorldPositon(gridPosition);
                     float raycastOffsetDistance = 5f;
-                    if(Physics.Raycast(worldPosition + Vector3.down * raycastOffsetDistance, Vector3.up, raycastOffsetDistance * 2, obstaclesLayer))
+                    if(gridSystem.RaycastVertical(gridPosition, obstaclesLayer, raycastOffsetDistance))
                     {
                         GetNode(x, z).SetWalkable(false);
                     }

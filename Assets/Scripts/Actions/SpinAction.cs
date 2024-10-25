@@ -32,7 +32,7 @@ namespace Game.Actions
             return false;
         }
 
-        public override bool IsValidGridPosition(GridPosition targetPosition, out float cost)
+        public override (bool, bool) IsValidGridPosition(GridPosition targetPosition, out float cost)
         {
             return base.IsValidGridPosition(targetPosition, out cost);
         }

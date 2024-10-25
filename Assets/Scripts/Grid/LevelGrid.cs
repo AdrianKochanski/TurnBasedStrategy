@@ -94,7 +94,7 @@ namespace Game.Grid
         public int GetHeight() => height;
         public float GetCellSize() => cellSize;
         public bool IsUnitInsideTheGrid(Unit unit) => gridSystem.IsValidGridPosition(unit.GetGridPosition());
-
+        public bool RaycastHorizontal(GridPosition from, GridPosition to, LayerMask layerMask, float? offset = 1.7f) => gridSystem.RaycastHorizontal(from, to, layerMask, offset);
         public bool HasAnyUnitOnGridPosition(GridPosition gridPosition)
         {
             if (gridSystem.TryGetGridObject(gridPosition, out GridObject gridObject))

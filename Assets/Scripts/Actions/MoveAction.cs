@@ -40,16 +40,17 @@ namespace Game.Actions
             return base.TryStartAction(targetGridPositions);
         }
 
-        public override bool IsValidGridPosition(GridPosition targetPosition, out float cost)
+        public override (bool, bool) IsValidGridPosition(GridPosition targetPosition, out float cost)
         {
-            if (!base.IsValidGridPosition(targetPosition, out cost)) return false;
-            if (!LevelGrid.Instance.IsUnitInsideTheGrid(unit)) return false;
-            if (LevelGrid.Instance.HasAnyUnitOnGridPosition(targetPosition)) return false;
-            if (!Pathfinding.Instance.IsWalkableGridPosition(targetPosition)) return false;
-            if (!Pathfinding.Instance.HasPath(unit.GetGridPosition(), targetPosition, out int pathLength)) return false;
+            (bool validRange, bool validTarget) = base.IsValidGridPosition(targetPosition, out cost);
+            if (!validRange || !validTarget) return (false, false);
+            if (!LevelGrid.Instance.IsUnitInsideTheGrid(unit)) return (false, false);
+            if (LevelGrid.Instance.HasAnyUnitOnGridPosition(targetPosition)) return (false, false);
+            if (!Pathfinding.Instance.IsWalkableGridPosition(targetPosition)) return (false, false);
+            if (!Pathfinding.Instance.HasPath(unit.GetGridPosition(), targetPosition, out int pathLength)) return (false, false);
 
             cost = (float)pathLength / (float)Pathfinding.Instance.GetMoveCost();
-            return true;
+            return (true, true);
         }
 
         public override string GetActionName()

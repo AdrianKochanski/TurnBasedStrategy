@@ -131,16 +131,16 @@ namespace Game.Actions
 
                     float distance = GridPosition.Distance(unitPosition, testGridPosition);
                     if (Mathf.RoundToInt(distance) > range) continue;
-                    if (!IsValidGridPosition(testGridPosition, out float cost)) continue;
+                    (bool validRange, bool validTarget) = IsValidGridPosition(testGridPosition, out float cost);
                     var actualCost = GetActionPointCost(cost);
 
-                    if (!CanSpendMaxActionPoints(actualCost)) continue;
+                    if (!validRange || !CanSpendMaxActionPoints(actualCost)) continue;
                     if (twoDimension)
                     {
                         actionGridPositions[rangeVisualType].Add((testGridPosition, actualCost));
                     }
 
-                    if (!CanSpendActionPoints(actualCost)) continue;
+                    if (!validTarget || !CanSpendActionPoints(actualCost)) continue;
                     actionGridPositions[targetVisualType].Add((testGridPosition, actualCost));
                 }
             }
@@ -148,10 +148,11 @@ namespace Game.Actions
             OnAnyActionGridUpdate?.Invoke(this);
         }
 
-        public virtual bool IsValidGridPosition(GridPosition targetPosition, out float cost)
+        public virtual (bool, bool) IsValidGridPosition(GridPosition targetPosition, out float cost)
         {
             cost = 1;
-            return LevelGrid.Instance.IsValidGridPosition(targetPosition);
+            bool isValid = LevelGrid.Instance.IsValidGridPosition(targetPosition);
+            return (isValid, isValid);
         }
 
         public int GetTargetGridPositonCount()
