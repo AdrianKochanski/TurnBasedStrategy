@@ -1,10 +1,8 @@
 using Game.Units;
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-namespace Game.Core
+namespace Game.Projectiles
 {
     public class BulletProjectile : MonoBehaviour
     {
@@ -56,7 +54,7 @@ namespace Game.Core
             if (hit.collider.TryGetComponent(out Unit unitHit) && !unitHit.IsDead())
             {
                 onHit?.Invoke(hit);
-                unitHit.Damage(damageAmount);
+                unitHit.Damage(damageAmount, hit.point);
                 bulletSpeed = 0;
 
                 if (hitEffect != null)

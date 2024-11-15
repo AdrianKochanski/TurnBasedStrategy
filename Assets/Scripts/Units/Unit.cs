@@ -104,7 +104,7 @@ namespace Game.Units
             return isEnemy; 
         }
 
-        public void Damage(int damageAmount) => healthSystem.Damage(damageAmount);
+        public void Damage(int damageAmount, Vector3 source) => healthSystem.Damage(damageAmount, source);
         public bool IsDead() => healthSystem.IsDead();
         public float GetHealthNormalized() => healthSystem.GetHealthNormalized();
     }

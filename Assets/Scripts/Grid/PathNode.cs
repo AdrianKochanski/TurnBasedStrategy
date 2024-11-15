@@ -1,9 +1,4 @@
-using Game.Grid;
-using System;
-using System.Runtime.InteropServices.WindowsRuntime;
-using UnityEngine;
-
-namespace Game.Core
+namespace Game.Grid
 {
     public class PathNode
     {

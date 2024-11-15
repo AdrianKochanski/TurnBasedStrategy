@@ -1,4 +1,5 @@
 using Game.Core;
+using Game.Interactions;
 using Game.Units;
 using System;
 using System.Collections;
@@ -102,6 +103,49 @@ namespace Game.Grid
                 return gridObject.HasAnyUnit();
             }
             return false;
+        }
+
+        public bool TryGetInteractableAtGrid(GridPosition gridPosition, out IInteractable interactable)
+        {
+            interactable = null;
+
+            if(gridSystem.TryGetGridObject(gridPosition, out GridObject gridObject))
+            {
+                interactable = gridObject.GetInteractable();
+                if(interactable == null)
+                {
+                    return false;
+                }
+                return true;
+            }
+
+            return false;
+        }
+
+        public void SetInteractableAtGrid(GridPosition gridPosition, IInteractable door)
+        {
+            if (gridSystem.TryGetGridObject(gridPosition, out GridObject gridObject))
+            {
+                gridObject.SetDoor(door);
+            }
+        }
+
+        internal List<GridPosition> GetGridsInLine(Transform transform, int positionsCount)
+        {
+            List<GridPosition> positions = new List<GridPosition>();
+            Vector3 startingPosition = transform.position + transform.right * cellSize * ((float)(positionsCount - 1) / 2) * (-1);
+
+            for (int i = 0; i < positionsCount; i++)
+            {
+                Vector3 vectorPosition = startingPosition + transform.right * cellSize * i;
+                var calculatedPosition = GetGridPosition(vectorPosition);
+                if (calculatedPosition != null)
+                {
+                    positions.Add(calculatedPosition);
+                }
+            }
+
+            return positions;
         }
     }
 }

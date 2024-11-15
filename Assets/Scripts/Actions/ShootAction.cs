@@ -11,12 +11,12 @@ namespace Game.Actions
     public class ShootAction : BaseAction
     {
         [SerializeField] private float aimingStateTime = .9f;
-        [SerializeField] private float shootingStateTime = .1f;
+        [SerializeField] private float shootingStateTime = .2f;
         [SerializeField] private float cooloffStateTime = .5f;
         [SerializeField] private float rotateAimingSpeed = 10f;
-        [SerializeField] private LayerMask obstaclesLayerMask;
 
         public event Action<Unit, Unit> OnShoot;
+        public static event Action<Unit, Unit> OnAnyShoot;
 
         private State state;
         private float stateTimer;
@@ -67,6 +67,7 @@ namespace Game.Actions
         private void Shoot()
         {
             OnShoot?.Invoke(unit, targetUnit);
+            OnAnyShoot?.Invoke(unit, targetUnit);
         }
 
         private bool NextState()

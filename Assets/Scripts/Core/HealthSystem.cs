@@ -1,11 +1,9 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace Game.Core
 {
-    public class HealthSystem : MonoBehaviour
+    public class HealthSystem : Damageable
     {
         [SerializeField] private int health = 100;
 
@@ -18,7 +16,7 @@ namespace Game.Core
             healthMax = health;
         }
 
-        public void Damage(int damageAmount)
+        public override void Damage(int damageAmount, Vector3 source)
         {
             health -= damageAmount;
             OnDamaged?.Invoke();

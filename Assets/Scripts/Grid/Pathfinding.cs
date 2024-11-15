@@ -1,12 +1,9 @@
-using Game.Grid;
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
 
-namespace Game.Core
+namespace Game.Grid
 {
     public class Pathfinding : MonoBehaviour
     {
@@ -139,6 +136,14 @@ namespace Game.Core
         public int Distance(GridPosition startGridPosition, GridPosition endGridPosition)
         {
             return Mathf.RoundToInt(GridPosition.Distance(startGridPosition, endGridPosition) * MOVE_COST);
+        }
+
+        public void SetIsWalkableGridPosition(GridPosition gridPosition, bool isWalkable)
+        {
+            if(gridSystem.TryGetGridObject(gridPosition, out PathNode pathNode))
+            {
+                pathNode.SetWalkable(isWalkable); 
+            }
         }
 
         public bool IsWalkableGridPosition(GridPosition gridPosition)

@@ -18,6 +18,7 @@ namespace Game.Actions
         [SerializeField] protected GridVisualType targetVisualType = GridVisualType.White;
         [SerializeField] protected int range = 6;
         [SerializeField] protected GridVisualType rangeVisualType = GridVisualType.Yellow;
+        [SerializeField] protected LayerMask obstaclesLayerMask;
 
         protected Unit unit;
         private bool isActive;

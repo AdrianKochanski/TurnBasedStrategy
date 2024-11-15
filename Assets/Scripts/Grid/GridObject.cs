@@ -1,3 +1,4 @@
+using Game.Interactions;
 using Game.Units;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +10,7 @@ namespace Game.Grid
         private GridSystem<GridObject> gridSystem;
         private GridPosition gridPosition;
         private HashSet<Unit> units;
+        private IInteractable interactable;
 
         public GridObject(GridSystem<GridObject> gridSystem, GridPosition gridPosition)
         {
@@ -48,6 +50,16 @@ namespace Game.Grid
         public bool HasAnyUnit()
         {
             return units.Any();
+        }
+
+        public IInteractable GetInteractable()
+        {
+            return interactable;
+        }
+
+        public void SetDoor(IInteractable door)
+        { 
+            this.interactable = door;
         }
     }
 }
