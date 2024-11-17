@@ -48,7 +48,7 @@ namespace Game.Units
             if (!TurnSystem.Instance.IsPlayerTurn()) return;
             if (EventSystem.current.IsPointerOverGameObject()) return;
 
-            if (Input.GetMouseButtonDown(0))
+            if (InputManager.Instance.IsSelectMouseButtonDownThisFrame())
             {
                 if (TryHandleUnitSelection()) return;
 
@@ -86,7 +86,7 @@ namespace Game.Units
 
         private bool TryHandleUnitSelection()
         {
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            Ray ray = Camera.main.ScreenPointToRay(InputManager.Instance.GetMouseScreenPosition());
 
             if (Physics.Raycast(ray, out RaycastHit hit, float.MaxValue, unitLayerMask))
             {

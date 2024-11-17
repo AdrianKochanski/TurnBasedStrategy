@@ -14,18 +14,9 @@ namespace Game.Core
             Instance = this;
         }
 
-        //private void Update()
-        //{
-        //    Vector3? hitPoint = GetPosition();
-        //    if (hitPoint.HasValue)
-        //    {
-        //        transform.position = hitPoint.Value;
-        //    }
-        //}
-
         public static bool TryGetPosition(out Vector3 position)
         {
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            Ray ray = Camera.main.ScreenPointToRay(InputManager.Instance.GetMouseScreenPosition());
             bool wasHit = Physics.Raycast(ray, out RaycastHit hit, float.MaxValue, Instance.mousePlaneLayerMask);
             if (wasHit)
             {

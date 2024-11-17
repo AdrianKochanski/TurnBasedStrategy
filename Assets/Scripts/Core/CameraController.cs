@@ -36,45 +36,23 @@ namespace Game.Core
 
         private void HandleMovement()
         {
-            Vector3 inputMoveDir = new Vector3(0, 0, 0);
-
-            if (Input.GetKey(KeyCode.W))
-            {
-                inputMoveDir.z += 1f;
-            }
-            if (Input.GetKey(KeyCode.S))
-            {
-                inputMoveDir.z -= 1f;
-            }
-
-            if (Input.GetKey(KeyCode.D))
-            {
-                inputMoveDir.x += 1f;
-            }
-            if (Input.GetKey(KeyCode.A))
-            {
-                inputMoveDir.x -= 1f;
-            }
-
-            Vector3 moveVector = transform.forward * inputMoveDir.z + transform.right * inputMoveDir.x;
+            Vector2 inputMoveDir = InputManager.Instance.GetCameraMoveVector();
+            Vector3 moveVector = transform.forward * inputMoveDir.y + transform.right * inputMoveDir.x;
             transform.position += moveVector * moveSpeed * Time.deltaTime;
         }
 
         private void HandleRotation()
         {
-            if (Input.GetMouseButton(1))
-            {
-                float mouseX = Input.GetAxis("Mouse X");
-                Vector3 rotationVector = new Vector3(0, mouseX, 0);
-                transform.eulerAngles += rotationVector * rotationSpeed * Time.deltaTime;
-            }
+            float mouseX = InputManager.Instance.GetCameraRotationAmount();
+            Vector3 rotationVector = new Vector3(0, mouseX, 0);
+            transform.eulerAngles += rotationVector * rotationSpeed * Time.deltaTime;
         }
 
         private void HandleZoom()
         {
             if (cinemachineTransposer != null)
             {
-                float newFollowOffset = targetFollowOffset.y - Input.mouseScrollDelta.y * scrollSensitivity;
+                float newFollowOffset = targetFollowOffset.y - InputManager.Instance.GetCameraZoomAmount() * scrollSensitivity;
                 targetFollowOffset.y = Mathf.Clamp(newFollowOffset, minScroll, maxScroll);
                 cinemachineTransposer.m_FollowOffset = Vector3.Lerp(cinemachineTransposer.m_FollowOffset, targetFollowOffset, scrollSpeed * Time.deltaTime);
             }
