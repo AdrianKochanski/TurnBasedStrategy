@@ -7,11 +7,22 @@ using UnityEngine;
 
 public class GrenadeAction : BaseAction
 {
+    [SerializeField] private float rotateAimingSpeed = 10f;
+    [SerializeField] private float rotationTolerance = 1f;
+
     public event Action<Unit, GridPosition> OnThrow;
     public static event Action<Unit, GridPosition> OnAnyThrow;
 
-    private bool wasThrown = false;
-    private bool targetReached = true;
+    private State state = State.TargetReached;
+
+    private enum State
+    {
+        Rotating,
+        Throwing,
+        Waiting,
+        TargetReached
+    }
+
     public override string GetActionName()
     {
         return "Grenade";
@@ -19,19 +30,50 @@ public class GrenadeAction : BaseAction
 
     public override bool UpdateAction()
     {
-        if(!wasThrown)
+        switch (state)
         {
-            Shoot();
+            case State.Rotating:
+                Vector3 moveDirection = (CurrentTargetVectorPosition() - transform.position).normalized;
+                transform.forward = Vector3.Lerp(transform.forward, moveDirection, rotateAimingSpeed * Time.deltaTime);
+
+                float angleDifference = Vector3.Angle(transform.forward, moveDirection);
+                if (angleDifference <= rotationTolerance)
+                {
+                    NextState();
+                }
+                break;
+            case State.Throwing:
+                Shoot();
+                NextState();
+                break;
+            case State.TargetReached:
+                return true;
         }
 
-        return targetReached;
+        return false;
+    }
+
+    private bool NextState()
+    {
+        switch (state)
+        {
+            case State.Rotating:
+                state = State.Throwing;
+                break;
+            case State.Throwing:
+                state = State.Waiting;
+                break;
+            case State.TargetReached:
+                return true;
+        }
+
+        return false;
     }
 
     public override bool TryStartAction(List<GridPosition> targetGridPositions)
     {
-        if (!targetReached) return false;
-        targetReached = false;
-        wasThrown = false;
+        if (!(state == State.TargetReached)) return false;
+        state = State.Rotating;
         return base.TryStartAction(targetGridPositions);
     }
 
@@ -57,12 +99,11 @@ public class GrenadeAction : BaseAction
 
     public void TargetReached()
     {
-        targetReached = true;
+        state = State.TargetReached;
     }
 
     private void Shoot()
     {
-        wasThrown = true;
         OnThrow?.Invoke(unit, CurrentTargetPosition());
         OnAnyThrow?.Invoke(unit, CurrentTargetPosition());
     }   

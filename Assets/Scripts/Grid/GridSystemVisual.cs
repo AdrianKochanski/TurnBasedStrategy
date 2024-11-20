@@ -41,7 +41,13 @@ namespace Game.Grid
             TurnSystem.Instance.OnTurnChange += TurnSystem_OnTurnChange;
             BaseAction.OnAnyActionGridUpdate += BaseAction_OnAnyActionGridUpdate;
             UpdateActionGrid();
+            //ShowAllPositons();
         }
+
+        //private void Update()
+        //{
+        //    HighligtPositionSelected();
+        //}
 
         private void UnitActionSystem_OnSelectedActionChange(BaseAction action)
         {
@@ -109,6 +115,38 @@ namespace Game.Grid
             HideAllGridPosition();
             foreach (var gridPositionsList in actionGridPositions) { 
                 ShowGridPositionList(gridPositionsList.Value.Select(i => i.Item1), gridPositionsList.Key);
+            }
+        }
+
+        private void ShowAllPositons()
+        {
+            int width = LevelGrid.Instance.GetWidth();
+            int height = LevelGrid.Instance.GetHeight();
+
+            for (int x = 0; x < width; x++)
+            {
+                for (int z = 0; z < height; z++)
+                {
+                    gridPositionVisuals[x, z].Show(GetGridVisualTypeMaterial(GridVisualType.White));
+                }
+            }
+        }
+
+        private GridPositionVisual lastSelectedPosition;
+        private void HighligtPositionSelected()
+        {
+            if(MouseWorld.TryGetPosition(out Vector3 mouseWorldPosition))
+            {
+                GridPosition gridPosition = LevelGrid.Instance.GetGridPosition(mouseWorldPosition);
+                if(LevelGrid.Instance.IsValidGridPosition(gridPosition))
+                {
+                    if(lastSelectedPosition != null)
+                    {
+                        lastSelectedPosition.Show(GetGridVisualTypeMaterial(GridVisualType.White));
+                    }
+                    lastSelectedPosition = gridPositionVisuals[gridPosition.x, gridPosition.z];
+                    lastSelectedPosition.Show(GetGridVisualTypeMaterial(GridVisualType.Green));
+                }
             }
         }
 

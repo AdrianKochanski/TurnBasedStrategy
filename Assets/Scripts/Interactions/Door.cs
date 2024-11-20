@@ -86,7 +86,7 @@ namespace Game.Interactions
 
         public void SetInteractableAtGrid()
         {
-            positions = LevelGrid.Instance.GetGridsInLine(transform, Mathf.RoundToInt(transform.localScale.x));
+            positions = LevelGrid.Instance.GetSurroundingGridsInLine(transform, Mathf.CeilToInt(transform.localScale.x));
             foreach (var position in positions)
             {
                 LevelGrid.Instance.SetInteractableAtGrid(position, this);

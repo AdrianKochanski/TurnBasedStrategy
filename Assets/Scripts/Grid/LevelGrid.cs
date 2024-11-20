@@ -20,7 +20,7 @@ namespace Game.Grid
 
         //public event Action OnAnyUnitMovedGridPosition;
 
-        private GridSystem<GridObject> gridSystem;
+        private GridSystemHex<GridObject> gridSystem;
 
         private void Awake()
         {
@@ -32,7 +32,7 @@ namespace Game.Grid
             }
             Instance = this;
 
-            gridSystem = new GridSystem<GridObject>(width, height, cellSize, (gS, gP) => new GridObject(gS, gP));
+            gridSystem = new GridSystemHex<GridObject>(width, height, cellSize, (gS, gP) => new GridObject(gS, gP));
             //gridSystem.CreateDebugObjects(gridObjectPrefab, transform);
         }
 
@@ -91,6 +91,7 @@ namespace Game.Grid
         public bool IsValidGridPosition(GridPosition gridPosition) => gridSystem.IsValidGridPosition(gridPosition);
         public bool IsGridBorder(GridPosition gridPosition) => gridSystem.IsGridBorder(gridPosition);
         public Vector3 GetWorldPositon(GridPosition gridPosition) => gridSystem.GetWorldPositon(gridPosition);
+        public float Distance(GridPosition from, GridPosition to) => gridSystem.Distance(from, to);
         public int GetWidth() => width;
         public int GetHeight() => height;
         public float GetCellSize() => cellSize;
@@ -130,19 +131,37 @@ namespace Game.Grid
             }
         }
 
-        internal List<GridPosition> GetGridsInLine(Transform transform, int positionsCount)
+        internal List<GridPosition> GetSurroundingGridsInLine(Transform transform, int positionsCount)
         {
             List<GridPosition> positions = new List<GridPosition>();
             Vector3 startingPosition = transform.position + transform.right * cellSize * ((float)(positionsCount - 1) / 2) * (-1);
+            float positionOffset = 0.20f;
+            Vector3 offsetVector = transform.forward * cellSize * positionOffset;
 
-            for (int i = 0; i < positionsCount; i++)
-            {
-                Vector3 vectorPosition = startingPosition + transform.right * cellSize * i;
-                var calculatedPosition = GetGridPosition(vectorPosition);
-                if (calculatedPosition != null)
+            Action<Vector3> AddToList = (Vector3 position) => {
+                var calculatedPosition = GetGridPosition(position);
+                if (calculatedPosition != null && !positions.Contains(calculatedPosition))
                 {
                     positions.Add(calculatedPosition);
                 }
+            };
+
+            Vector3 vectorPosition = transform.position;
+            Vector3 forwardPositionOffset = vectorPosition + offsetVector;
+            Vector3 backwardPositionOffset = vectorPosition - offsetVector;
+            AddToList(forwardPositionOffset);
+            AddToList(backwardPositionOffset);
+
+            for (int i = 0; i < positionsCount; i++)
+            {
+                vectorPosition = startingPosition + transform.right * cellSize * i;
+                forwardPositionOffset = vectorPosition + offsetVector;
+                backwardPositionOffset = vectorPosition - offsetVector;
+
+                //Debug.DrawLine(vectorPosition, forwardPositionOffset, Color.red, 300f);
+                //Debug.DrawLine(vectorPosition, backwardPositionOffset, Color.red, 300f);
+                AddToList(forwardPositionOffset);
+                AddToList(backwardPositionOffset);
             }
 
             return positions;

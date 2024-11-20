@@ -1,18 +1,21 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace Game.Grid
 {
-    public class GridSystem<TGridObject>
+    public class GridSystemHex<TGridObject>
     {
         private int width;
         private int height;
         private float cellSize;
         private TGridObject[,] gridObjectMap;
+        private const float HEX_VERTICAL_OFFSET_MULTIPLIER = 0.125f;
+        private const float HEX_HORIZONTAL_ODD_OFFSET = 0.5f;
 
-        public GridSystem(int width, int height, float cellSize, Func<GridSystem<TGridObject>, GridPosition, TGridObject> createGridObject)
+
+        public GridSystemHex(int width, int height, float cellSize, Func<GridSystemHex<TGridObject>, GridPosition, TGridObject> createGridObject)
         {
             this.width = width;
             this.height = height;
@@ -28,17 +31,36 @@ namespace Game.Grid
             }
         }
 
-        public Vector3 GetWorldPositon(GridPosition gridPosition)
+        public float GetZHexWorldPosition(GridPosition gridPosition)
         {
-            return new Vector3(gridPosition.x, 0, gridPosition.z) * cellSize;
+            return gridPosition.z * (1 - (HEX_VERTICAL_OFFSET_MULTIPLIER * cellSize));
+        }
+
+        public float GetXHexWorldPosition(int x, int z)
+        {
+            return z % 2 == 0 ? x : x + HEX_HORIZONTAL_ODD_OFFSET;
+        }
+
+        public Vector3 GetWorldPositon(GridPosition p)
+        {
+            return new Vector3(GetXHexWorldPosition(p.x, p.z), 0, GetZHexWorldPosition(p)) * cellSize;
+        }
+
+        public int GetZHexGridPosition(Vector3 worldPosition)
+        {
+            return Mathf.RoundToInt(worldPosition.z / (1 - (HEX_VERTICAL_OFFSET_MULTIPLIER * cellSize)));
+        }
+
+        public int GetXHexGridPosition(float x, float z)
+        {
+            return Mathf.RoundToInt(z % 2 == 0 ? x : x - HEX_HORIZONTAL_ODD_OFFSET);
         }
 
         public GridPosition GetGridPosition(Vector3 worldPosition)
         {
-            return new GridPosition(
-                Mathf.RoundToInt(worldPosition.x / cellSize),
-                Mathf.RoundToInt(worldPosition.z / cellSize)
-            );
+            Vector3 p = worldPosition / cellSize;
+            int zHexGrid = GetZHexGridPosition(p);
+            return new GridPosition(GetXHexGridPosition(p.x, zHexGrid), zHexGrid);
         }
 
         public void CreateDebugObjects(Transform debugPrefab, Transform? parent)
@@ -101,15 +123,42 @@ namespace Game.Grid
             );
         }
 
-        public bool RaycastVertical(GridPosition from, LayerMask layerMask, float? height = 1f)
+        public bool RaycastVertical(GridPosition from, LayerMask layerMask, float? height = 1f, float checkPointOffset = 0.4f)
         {
+            float verticalOffset = height.Value / 5;
+            float horizontalOffset = cellSize * checkPointOffset;
             Vector3 fromV = GetWorldPositon(from);
-            return Physics.Raycast(
-                fromV + Vector3.down * height.Value,
-                Vector3.up,
-                height.Value * 2,
-                layerMask
-            );
+            Vector3 origin = fromV + Vector3.down * verticalOffset;
+
+            Vector3 rightOrigin = origin + Vector3.right * horizontalOffset;
+            Vector3 leftOrigin = origin - Vector3.right * horizontalOffset;
+            Vector3 forwardOrigin = origin + Vector3.forward * horizontalOffset;
+            Vector3 backwardOrigin = origin - Vector3.forward * horizontalOffset;
+
+            List<Vector3> positions = new List<Vector3>() { origin, rightOrigin, leftOrigin, forwardOrigin, backwardOrigin };
+
+            foreach (Vector3 originPositon in positions)
+            {
+                bool result = Physics.Raycast(
+                    originPositon,
+                    Vector3.up,
+                    height.Value + verticalOffset,
+                    layerMask
+                );
+                if (result)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public float Distance(GridPosition from, GridPosition to)
+        {
+            Vector3 fromWorldPosition = GetWorldPositon(from);
+            Vector3 toWorldPosition = GetWorldPositon(to);
+            float distance = Vector3.Distance(fromWorldPosition, toWorldPosition) / cellSize;
+            return distance;
         }
     }
 }

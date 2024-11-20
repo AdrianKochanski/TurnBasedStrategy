@@ -130,7 +130,7 @@ namespace Game.Actions
                     GridPosition offsetGridPosition = new GridPosition(x, z);
                     GridPosition testGridPosition = unitPosition + offsetGridPosition;
 
-                    float distance = GridPosition.Distance(unitPosition, testGridPosition);
+                    float distance = LevelGrid.Instance.Distance(unitPosition, testGridPosition);
                     if (Mathf.RoundToInt(distance) > range) continue;
                     (bool validRange, bool validTarget) = IsValidGridPosition(testGridPosition, out float cost);
                     var actualCost = GetActionPointCost(cost);

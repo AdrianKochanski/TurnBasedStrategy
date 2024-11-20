@@ -1,6 +1,7 @@
 using Game.Actions;
 using Game.Grid;
 using Game.Projectiles;
+using System;
 using UnityEngine;
 
 namespace Game.Units
@@ -14,6 +15,7 @@ namespace Game.Units
         [SerializeField] private Transform throwPointTransform;
         [SerializeField] private Transform rifleTransform;
         [SerializeField] private Transform swordTransform;
+        [SerializeField] private UnitAnimatorEvent animatorEvent;
 
         private void Awake()
         {
@@ -53,10 +55,25 @@ namespace Game.Units
 
         private void GrenadeAction_OnThrow(Unit shootingUnit, GridPosition targetGrid, GrenadeAction grenadeAction)
         {
-            //unitAnimator.SetTrigger("Throw");
-            Transform projectileTransform = Instantiate(grenadeProjectilePrefab, throwPointTransform.position, Quaternion.identity);
-            GrenadeProjectile grenadeProjectile = projectileTransform.GetComponent<GrenadeProjectile>();
-            grenadeProjectile.Setup(shootingUnit, targetGrid, grenadeAction.TargetReached);
+            HideAll();
+            unitAnimator.SetTrigger("Throw");
+            Action UnitAnimatorEvent_OnThrow = null;
+
+            UnitAnimatorEvent_OnThrow = () =>
+            {
+                Transform projectileTransform = Instantiate(grenadeProjectilePrefab, throwPointTransform.position, Quaternion.identity);
+                GrenadeProjectile grenadeProjectile = projectileTransform.GetComponent<GrenadeProjectile>();
+
+                grenadeProjectile.Setup(shootingUnit, targetGrid, () =>
+                {
+                    EquipRifle();
+                    grenadeAction.TargetReached();
+                    animatorEvent.OnThrow -= UnitAnimatorEvent_OnThrow;
+                });
+                animatorEvent.OnThrow -= UnitAnimatorEvent_OnThrow;
+            };
+
+            animatorEvent.OnThrow += UnitAnimatorEvent_OnThrow;
         }
 
         private void SwordAction_OnActionBegin()
@@ -78,6 +95,12 @@ namespace Game.Units
         private void MoveAction_StopMoving()
         {
             unitAnimator.SetBool("IsWalking", false);
+        }
+
+        private void HideAll()
+        {
+            rifleTransform.gameObject.SetActive(false);
+            swordTransform.gameObject.SetActive(false);
         }
 
         private void EquipSword()

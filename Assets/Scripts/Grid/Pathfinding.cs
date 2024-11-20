@@ -13,9 +13,13 @@ namespace Game.Grid
         private int height = 10;
         private float cellSize = 2f;
         private const int MOVE_COST = 10;
-        private GridSystem<PathNode> gridSystem;
+        private GridSystemHex<PathNode> gridSystem;
         [SerializeField] private Transform gridObjectPrefab;
         [SerializeField] private LayerMask obstaclesLayer;
+        [Range(0, 0.5f)]
+        [SerializeField] private float obstaclesCheckOffset = 0.4f;
+        [Range(0, 5f)]
+        [SerializeField] private float obstaclesCheckHeight = 2f;
 
         private void Awake()
         {
@@ -35,7 +39,7 @@ namespace Game.Grid
             this.height = height;
             this.cellSize = cellSize;
 
-            gridSystem = new GridSystem<PathNode>(width, height, cellSize, (gS, gP) => new PathNode(gP));
+            gridSystem = new GridSystemHex<PathNode>(width, height, cellSize, (gS, gP) => new PathNode(gP));
             //gridSystem.CreateDebugObjects(gridObjectPrefab, transform);
 
             for (int x = 0; x < width; x++)
@@ -43,8 +47,7 @@ namespace Game.Grid
                 for (int z = 0; z < height; z++)
                 {
                     GridPosition gridPosition = new GridPosition(x, z);
-                    float raycastOffsetDistance = 5f;
-                    if(gridSystem.RaycastVertical(gridPosition, obstaclesLayer, raycastOffsetDistance))
+                    if(gridSystem.RaycastVertical(gridPosition, obstaclesLayer, obstaclesCheckHeight, obstaclesCheckOffset))
                     {
                         GetNode(x, z).SetWalkable(false);
                     }
@@ -135,7 +138,7 @@ namespace Game.Grid
 
         public int Distance(GridPosition startGridPosition, GridPosition endGridPosition)
         {
-            return Mathf.RoundToInt(GridPosition.Distance(startGridPosition, endGridPosition) * MOVE_COST);
+            return Mathf.RoundToInt(LevelGrid.Instance.Distance(startGridPosition, endGridPosition) * MOVE_COST);
         }
 
         public void SetIsWalkableGridPosition(GridPosition gridPosition, bool isWalkable)
@@ -162,13 +165,11 @@ namespace Game.Grid
             List<PathNode> neighbourList = new List<PathNode>()
             {
                 GetNode(gridPosition.x - 1, gridPosition.z),
-                GetNode(gridPosition.x - 1, gridPosition.z + 1),
-                GetNode(gridPosition.x - 1, gridPosition.z - 1),
-                GetNode(gridPosition.x, gridPosition.z + 1),
-                GetNode(gridPosition.x, gridPosition.z - 1),
                 GetNode(gridPosition.x + 1, gridPosition.z),
-                GetNode(gridPosition.x + 1, gridPosition.z + 1),
-                GetNode(gridPosition.x + 1, gridPosition.z - 1)
+                GetNode(gridPosition.x, gridPosition.z - 1),
+                GetNode(gridPosition.x, gridPosition.z + 1),
+                GetNode(gridPosition.z % 2 == 0 ? gridPosition.x - 1 : gridPosition.x + 1, gridPosition.z + 1),
+                GetNode(gridPosition.z % 2 == 0 ? gridPosition.x - 1 : gridPosition.x + 1, gridPosition.z - 1),
             };
 
             return neighbourList.NotNull();
