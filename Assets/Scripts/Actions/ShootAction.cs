@@ -39,21 +39,24 @@ namespace Game.Actions
         {
             stateTimer -= Time.deltaTime;
 
-            switch (state)
+            if (TryGetCurrentTargetWorldPosition(out Vector3 targetPosition))
             {
-                case State.Aiming:
-                    Vector3 moveDirection = (CurrentTargetVectorPosition() - transform.position).normalized;
-                    transform.forward = Vector3.Lerp(transform.forward, moveDirection, rotateAimingSpeed * Time.deltaTime);
-                    break;
-                case State.Shooting:
-                    if (canShootBullet)
-                    {
-                        Shoot();
-                        canShootBullet = false;
-                    }
-                    break;
-                case State.Cooloff:
-                    return true;
+                switch (state)
+                {
+                    case State.Aiming:
+                        Vector3 moveDirection = (targetPosition - transform.position).normalized;
+                        transform.forward = Vector3.Lerp(transform.forward, moveDirection, rotateAimingSpeed * Time.deltaTime);
+                        break;
+                    case State.Shooting:
+                        if (canShootBullet)
+                        {
+                            Shoot();
+                            canShootBullet = false;
+                        }
+                        break;
+                    case State.Cooloff:
+                        return true;
+                }
             }
 
             if (stateTimer <= 0f)

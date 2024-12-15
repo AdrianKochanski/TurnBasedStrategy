@@ -37,14 +37,13 @@ public class InteractAction : BaseAction
     public override (bool, bool) IsValidGridPosition(GridPosition targetPosition, out float cost)
     {
         (bool validRange, bool validTarget) = base.IsValidGridPosition(targetPosition, out cost);
-        if (!validRange || !validTarget) return (false, false);
 
-        if (!LevelGrid.Instance.TryGetInteractableAtGrid(targetPosition, out IInteractable door) || !door.CanInteract())
+        if (LevelGrid.Instance.TryGetInteractableAtGrid(targetPosition, out IInteractable interactable) && interactable.CanInteract())
         {
-            return (true, false);
+            return (true, true);
         }
 
-        return (true, true);
+        return (validRange, false);
     }
 
     public override bool TryStartAction(List<GridPosition> targetGridPositions)
@@ -59,14 +58,17 @@ public class InteractAction : BaseAction
     {
         stateTimer -= Time.deltaTime;
 
-        switch (state)
+        if (TryGetCurrentTargetWorldPosition(out Vector3 targetPosition))
         {
-            case State.BeforeInteraction:
-                Vector3 moveDirection = (CurrentTargetVectorPosition() - transform.position).normalized;
-                transform.forward = Vector3.Lerp(transform.forward, moveDirection, rotateAimingSpeed * Time.deltaTime);
-                break;
-            case State.AfterInteraction:
-                return true;
+            switch (state)
+            {
+                case State.BeforeInteraction:
+                    Vector3 moveDirection = (targetPosition - transform.position).normalized;
+                    transform.forward = Vector3.Lerp(transform.forward, moveDirection, rotateAimingSpeed * Time.deltaTime);
+                    break;
+                case State.AfterInteraction:
+                    return true;
+            }
         }
 
         if (stateTimer <= 0f)

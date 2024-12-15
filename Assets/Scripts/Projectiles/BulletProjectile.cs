@@ -40,9 +40,8 @@ namespace Game.Projectiles
         private Vector3 GetAimLocation()
         {
             CapsuleCollider targetCapsule = targetUnit.GetComponent<CapsuleCollider>();
-            if (targetCapsule == null)
+            if (targetCapsule == null && targetUnit.TryGetWorldPositon(out Vector3 targetPositon))
             {
-                Vector3 targetPositon = targetUnit.GetWorldPositon();
                 targetPositon.y = transform.position.y;
                 return targetPositon;
             }

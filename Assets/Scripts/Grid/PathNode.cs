@@ -1,6 +1,9 @@
+using System;
+using UnityEngine;
+
 namespace Game.Grid
 {
-    public class PathNode
+    public class PathNode : IEquatable<object>, IComparable<PathNode>
     {
         private GridPosition _gridPosition;
         private int gCost;
@@ -77,6 +80,30 @@ namespace Game.Grid
         internal void SetWalkable(bool isWalkable)
         {
             this.isWalkable = isWalkable;
+        }
+
+        public override bool Equals(object other)
+        {
+            return other is PathNode node && _gridPosition.Equals(node.GetGridPosition());
+        }
+
+        public override int GetHashCode()
+        {
+            return _gridPosition.GetHashCode();
+        }
+
+        public int CompareTo(PathNode other)
+        {
+            if (other == null) return 1;
+
+            int compare = GetFCost().CompareTo(other.GetFCost());
+            if (compare == 0)
+            {
+                // Tie-breaker: compare by HCost (optional, for A* optimization)
+                compare = GetHCost().CompareTo(other.GetHCost());
+            }
+
+            return compare;
         }
     }
 }

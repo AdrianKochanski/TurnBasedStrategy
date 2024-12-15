@@ -10,7 +10,7 @@ namespace Game.Core
 
         private void Start()
         {
-            gridPosition = LevelGrid.Instance.GetGridPosition(transform.position);
+            LevelGrid.Instance.TryGetGridPosition(transform.position, out gridPosition);
         }
 
         public GridPosition GetGridPosition()

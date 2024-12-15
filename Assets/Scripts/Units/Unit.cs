@@ -4,7 +4,6 @@ using Game.Grid;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.VisualScripting;
 using UnityEngine;
 
 namespace Game.Units
@@ -31,17 +30,17 @@ namespace Game.Units
 
         private void Start()
         {
-            gridPosition = LevelGrid.Instance.GetGridPosition(transform.position);
-            LevelGrid.Instance.AddUnitAtGridPosition(gridPosition, this);
-            healthSystem.OnDead += HealthSystem_OnDead;
-            OnAnyUnitSpawned?.Invoke(this);
+            if(LevelGrid.Instance.TryGetGridPosition(transform.position, out gridPosition))
+            {
+                LevelGrid.Instance.AddUnitAtGridPosition(gridPosition, this);
+                healthSystem.OnDead += HealthSystem_OnDead;
+                OnAnyUnitSpawned?.Invoke(this);
+            };
         }
 
         private void Update()
         {
-
-            GridPosition newGridPosition = LevelGrid.Instance.GetGridPosition(transform.position);
-            if (newGridPosition != gridPosition)
+            if (LevelGrid.Instance.TryGetGridPosition(transform.position, out GridPosition newGridPosition) && newGridPosition != gridPosition)
             {
                 GridPosition oldGridPosition = gridPosition;
                 gridPosition = newGridPosition;
@@ -80,7 +79,7 @@ namespace Game.Units
             return baseActions.OfType<T>().FirstOrDefault();
         }
 
-        public Vector3 GetWorldPositon() => LevelGrid.Instance.GetWorldPositon(gridPosition);
+        public bool TryGetWorldPositon(out Vector3 worldPosition) => LevelGrid.Instance.TryGetWorldPositon(gridPosition, out worldPosition);
 
         public IEnumerable<BaseAction> GetBaseActions()
         {

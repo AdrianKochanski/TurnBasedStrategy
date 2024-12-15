@@ -30,24 +30,28 @@ public class GrenadeAction : BaseAction
 
     public override bool UpdateAction()
     {
-        switch (state)
+        if(TryGetCurrentTargetWorldPosition(out Vector3 targetPosition))
         {
-            case State.Rotating:
-                Vector3 moveDirection = (CurrentTargetVectorPosition() - transform.position).normalized;
-                transform.forward = Vector3.Lerp(transform.forward, moveDirection, rotateAimingSpeed * Time.deltaTime);
+            switch (state)
+            {
+                case State.Rotating:
 
-                float angleDifference = Vector3.Angle(transform.forward, moveDirection);
-                if (angleDifference <= rotationTolerance)
-                {
+                    Vector3 moveDirection = (targetPosition - transform.position).normalized;
+                    transform.forward = Vector3.Lerp(transform.forward, moveDirection, rotateAimingSpeed * Time.deltaTime);
+
+                    float angleDifference = Vector3.Angle(transform.forward, moveDirection);
+                    if (angleDifference <= rotationTolerance)
+                    {
+                        NextState();
+                    }
+                    break;
+                case State.Throwing:
+                    Shoot();
                     NextState();
-                }
-                break;
-            case State.Throwing:
-                Shoot();
-                NextState();
-                break;
-            case State.TargetReached:
-                return true;
+                    break;
+                case State.TargetReached:
+                    return true;
+            }
         }
 
         return false;
@@ -104,7 +108,8 @@ public class GrenadeAction : BaseAction
 
     private void Shoot()
     {
-        OnThrow?.Invoke(unit, CurrentTargetPosition());
-        OnAnyThrow?.Invoke(unit, CurrentTargetPosition());
+        var currentTargetPos = CurrentTargetPosition();
+        OnThrow?.Invoke(unit, currentTargetPos);
+        OnAnyThrow?.Invoke(unit, currentTargetPos);
     }   
 }

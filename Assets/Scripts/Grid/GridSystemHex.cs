@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
+using static TMPro.SpriteAssetUtilities.TexturePacker_JsonArray;
 
 namespace Game.Grid
 {
@@ -10,23 +11,27 @@ namespace Game.Grid
         private int width;
         private int height;
         private float cellSize;
+        private int floor;
+        private float floor_height;
         private TGridObject[,] gridObjectMap;
         private const float HEX_VERTICAL_OFFSET_MULTIPLIER = 0.125f;
         private const float HEX_HORIZONTAL_ODD_OFFSET = 0.5f;
 
 
-        public GridSystemHex(int width, int height, float cellSize, Func<GridSystemHex<TGridObject>, GridPosition, TGridObject> createGridObject)
+        public GridSystemHex(int width, int height, float cellSize, int floor, float floor_height, Func<GridSystemHex<TGridObject>, GridPosition, TGridObject> createGridObject)
         {
             this.width = width;
             this.height = height;
             this.cellSize = cellSize;
+            this.floor = floor;
+            this.floor_height = floor_height;
             gridObjectMap = new TGridObject[width, height];
 
             for (int x = 0; x < width; x++)
             {
                 for (int z = 0; z < height; z++)
                 {
-                    gridObjectMap[x, z] = createGridObject(this, new GridPosition(x, z));
+                    gridObjectMap[x, z] = createGridObject(this, new GridPosition(x, z, floor));
                 }
             }
         }
@@ -43,7 +48,7 @@ namespace Game.Grid
 
         public Vector3 GetWorldPositon(GridPosition p)
         {
-            return new Vector3(GetXHexWorldPosition(p.x, p.z), 0, GetZHexWorldPosition(p)) * cellSize;
+            return new Vector3(GetXHexWorldPosition(p.x, p.z), p.floor * floor_height, GetZHexWorldPosition(p)) * cellSize;
         }
 
         public int GetZHexGridPosition(Vector3 worldPosition)
@@ -60,7 +65,7 @@ namespace Game.Grid
         {
             Vector3 p = worldPosition / cellSize;
             int zHexGrid = GetZHexGridPosition(p);
-            return new GridPosition(GetXHexGridPosition(p.x, zHexGrid), zHexGrid);
+            return new GridPosition(GetXHexGridPosition(p.x, zHexGrid), zHexGrid, floor);
         }
 
         public void CreateDebugObjects(Transform debugPrefab, Transform? parent)
@@ -69,7 +74,7 @@ namespace Game.Grid
             {
                 for (int z = 0; z < height; z++)
                 {
-                    GridPosition gridPosition = new GridPosition(x, z);
+                    GridPosition gridPosition = new GridPosition(x, z, floor);
                     Transform gridObjectInstance = GameObject.Instantiate(debugPrefab, GetWorldPositon(gridPosition), Quaternion.identity, parent);
                     
                     if(gridObjectInstance.TryGetComponent(out GridDebugObject gridDebugObject) && TryGetGridObject(gridPosition, out TGridObject gridObject))
@@ -99,7 +104,8 @@ namespace Game.Grid
             return gridPosition.x >= 0 
                 && gridPosition.z >= 0 
                 && gridPosition.x < width
-                && gridPosition.z < height;
+                && gridPosition.z < height
+                && gridPosition.floor == floor;
         }
 
         public bool IsGridBorder(GridPosition gridPosition)
@@ -123,13 +129,10 @@ namespace Game.Grid
             );
         }
 
-        public bool RaycastVertical(GridPosition from, LayerMask layerMask, float? height = 1f, float checkPointOffset = 0.4f)
+        public bool RaycastVertical(GridPosition from, LayerMask layerMask, float height = 1f, float checkPointOffset = 0.4f)
         {
-            float verticalOffset = height.Value / 5;
             float horizontalOffset = cellSize * checkPointOffset;
-            Vector3 fromV = GetWorldPositon(from);
-            Vector3 origin = fromV + Vector3.down * verticalOffset;
-
+            Vector3 origin = GetWorldPositon(from);
             Vector3 rightOrigin = origin + Vector3.right * horizontalOffset;
             Vector3 leftOrigin = origin - Vector3.right * horizontalOffset;
             Vector3 forwardOrigin = origin + Vector3.forward * horizontalOffset;
@@ -139,18 +142,28 @@ namespace Game.Grid
 
             foreach (Vector3 originPositon in positions)
             {
-                bool result = Physics.Raycast(
-                    originPositon,
-                    Vector3.up,
-                    height.Value + verticalOffset,
-                    layerMask
-                );
-                if (result)
+                if(RaycastVertical(originPositon, layerMask, height))
                 {
                     return true;
                 }
             }
             return false;
+        }
+
+        public bool RaycastVertical(Vector3 fromV, LayerMask layerMask, float height = 1f)
+        {
+            Vector3 offsetDirection = height > 0 ? Vector3.down : Vector3.up;
+            Vector3 raycastDirection = height > 0 ? Vector3.up : Vector3.down;
+            height = Mathf.Abs(height);
+            float verticalOffset = height / 5;
+            Vector3 originPositon = fromV + offsetDirection * verticalOffset;
+            var result = Physics.Raycast(originPositon, raycastDirection, height + verticalOffset, layerMask);
+            return result;
+        }
+
+        public bool RaycastVertical(GridPosition from, LayerMask layerMask, float height = 1f)
+        {
+            return RaycastVertical(GetWorldPositon(from), layerMask, height);
         }
 
         public float Distance(GridPosition from, GridPosition to)

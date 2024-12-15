@@ -109,18 +109,17 @@ namespace Game.Units
 
         private void HandleSelectedAction()
         {
-            GridPosition gridPosition = new GridPosition(0, 0);
-            bool newPositionFound = MouseWorld.TryGetPosition(out Vector3 mousePosition);
-            if (newPositionFound) gridPosition = LevelGrid.Instance.GetGridPosition(mousePosition);
-
-            switch (selectedAction)
+            if(MouseWorld.TryGetPosition(out Vector3 mousePosition) && LevelGrid.Instance.TryGetGridPosition(mousePosition, out GridPosition gridPosition))
             {
-                case MoveAction moveAction:
-                    moveAction.TryStartAction(new List<GridPosition> { gridPosition });
-                    break;
-                default:
-                    selectedAction.TryStartAction(new List<GridPosition> { gridPosition });
-                    break;
+                switch (selectedAction)
+                {
+                    case MoveAction moveAction:
+                        moveAction.TryStartAction(new List<GridPosition> { gridPosition });
+                        break;
+                    default:
+                        selectedAction.TryStartAction(new List<GridPosition> { gridPosition });
+                        break;
+                }
             }
         }
     }

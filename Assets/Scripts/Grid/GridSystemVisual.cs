@@ -31,7 +31,7 @@ namespace Game.Grid
             RedSoft
         }
 
-        private GridPositionVisual[,] gridPositionVisuals;
+        private GridPositionVisual[,,] gridPositionVisuals;
 
 
         private void Start()
@@ -75,7 +75,7 @@ namespace Game.Grid
             {
                 if(LevelGrid.Instance.IsValidGridPosition(gridPosition))
                 {
-                    gridPositionVisuals[gridPosition.x, gridPosition.z].Show(GetGridVisualTypeMaterial(gridVisualType));
+                    gridPositionVisuals[gridPosition.x, gridPosition.z, gridPosition.floor].Show(GetGridVisualTypeMaterial(gridVisualType));
                 }
             }
         }
@@ -84,22 +84,27 @@ namespace Game.Grid
         {
             int width = LevelGrid.Instance.GetWidth();
             int height = LevelGrid.Instance.GetHeight();
+            int floors = LevelGrid.Instance.GetFloorAmount();
 
-            gridPositionVisuals = new GridPositionVisual[width, height];
-
+            gridPositionVisuals = new GridPositionVisual[width, height, floors];
             for (int x = 0; x < width; x++)
             {
                 for (int z = 0; z < height; z++)
                 {
-                    GridPosition gridPosition = new GridPosition(x, z);
-                    GridPositionVisual gridPositionVisualInstance = Instantiate(
-                        GridPositionVisualPrefab,
-                        LevelGrid.Instance.GetWorldPositon(gridPosition),
-                        Quaternion.identity,
-                        transform
-                    );
-
-                    gridPositionVisuals[x, z] = gridPositionVisualInstance;
+                    for (int floor = 0; floor < floors; floor++)
+                    {
+                        GridPosition gridPosition = new GridPosition(x, z, floor);
+                        if(LevelGrid.Instance.TryGetWorldPositon(gridPosition, out Vector3 worldPosition))
+                        {
+                            GridPositionVisual gridPositionVisualInstance = Instantiate(
+                                GridPositionVisualPrefab,
+                                worldPosition,
+                                Quaternion.identity,
+                                transform
+                            );
+                            gridPositionVisuals[x, z, floor] = gridPositionVisualInstance;
+                        }
+                    }
                 }
             }
         }
@@ -122,12 +127,16 @@ namespace Game.Grid
         {
             int width = LevelGrid.Instance.GetWidth();
             int height = LevelGrid.Instance.GetHeight();
+            int floors = LevelGrid.Instance.GetFloorAmount();
 
             for (int x = 0; x < width; x++)
             {
                 for (int z = 0; z < height; z++)
                 {
-                    gridPositionVisuals[x, z].Show(GetGridVisualTypeMaterial(GridVisualType.White));
+                    for (int floor = 0; floor < floors; floor++)
+                    {
+                        gridPositionVisuals[x, z, floor].Show(GetGridVisualTypeMaterial(GridVisualType.White));
+                    }
                 }
             }
         }
@@ -135,18 +144,16 @@ namespace Game.Grid
         private GridPositionVisual lastSelectedPosition;
         private void HighligtPositionSelected()
         {
-            if(MouseWorld.TryGetPosition(out Vector3 mouseWorldPosition))
+            if(MouseWorld.TryGetPosition(out Vector3 mouseWorldPosition) 
+                && LevelGrid.Instance.TryGetGridPosition(mouseWorldPosition, out GridPosition gridPosition) 
+                && LevelGrid.Instance.IsValidGridPosition(gridPosition))
             {
-                GridPosition gridPosition = LevelGrid.Instance.GetGridPosition(mouseWorldPosition);
-                if(LevelGrid.Instance.IsValidGridPosition(gridPosition))
+                if(lastSelectedPosition != null)
                 {
-                    if(lastSelectedPosition != null)
-                    {
-                        lastSelectedPosition.Show(GetGridVisualTypeMaterial(GridVisualType.White));
-                    }
-                    lastSelectedPosition = gridPositionVisuals[gridPosition.x, gridPosition.z];
-                    lastSelectedPosition.Show(GetGridVisualTypeMaterial(GridVisualType.Green));
+                    lastSelectedPosition.Show(GetGridVisualTypeMaterial(GridVisualType.White));
                 }
+                lastSelectedPosition = gridPositionVisuals[gridPosition.x, gridPosition.z, gridPosition.floor];
+                lastSelectedPosition.Show(GetGridVisualTypeMaterial(GridVisualType.Green));
             }
         }
 

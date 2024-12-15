@@ -1,8 +1,6 @@
-using Game.Core;
 using Game.Interactions;
 using Game.Units;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -13,14 +11,14 @@ namespace Game.Grid
     {
         public static LevelGrid Instance { get; private set; }
 
+        public const float FLOOR_HEIGHT = 1.5f;
+        [SerializeField] private Transform gridObjectPrefab;
         [SerializeField] private int width = 10;
         [SerializeField] private int height = 10;
         [SerializeField] private float cellSize = 2f;
-        [SerializeField] private Transform gridObjectPrefab;
+        [SerializeField] private int floorAmount;
 
-        //public event Action OnAnyUnitMovedGridPosition;
-
-        private GridSystemHex<GridObject> gridSystem;
+        private List<GridSystemHex<GridObject>> gridSystems;
 
         private void Awake()
         {
@@ -32,18 +30,34 @@ namespace Game.Grid
             }
             Instance = this;
 
-            gridSystem = new GridSystemHex<GridObject>(width, height, cellSize, (gS, gP) => new GridObject(gS, gP));
-            //gridSystem.CreateDebugObjects(gridObjectPrefab, transform);
+            gridSystems = new List<GridSystemHex<GridObject>>();
+            for (int floor = 0; floor < floorAmount; floor++)
+            {
+                var gridSystem = new GridSystemHex<GridObject>(width, height, cellSize, floor, FLOOR_HEIGHT, (gS, gP) => new GridObject(gS, gP));
+                gridSystems.Add(gridSystem);
+                //gridSystem.CreateDebugObjects(gridObjectPrefab, transform);
+            }
         }
 
         private void Start()
         {
-            Pathfinding.Instance.Setup(width, height, cellSize);
+            Pathfinding.Instance.Setup(width, height, cellSize, floorAmount);
+        }
+
+        private bool TryGetGridSystem(int floor, out GridSystemHex<GridObject> gridSystem)
+        {
+            if (floor < 0 || floor >= floorAmount)
+            {
+                gridSystem = null;
+                return false;
+            }
+            gridSystem = gridSystems[floor];
+            return true;
         }
 
         public IEnumerable<Unit> GetUnitListAtGridPosition(GridPosition gridPosition)
         {
-            if (gridSystem.TryGetGridObject(gridPosition, out GridObject gridObject))
+            if (TryGetGridSystem(gridPosition.floor, out GridSystemHex<GridObject> gridSystem) && gridSystem.TryGetGridObject(gridPosition, out GridObject gridObject))
             {
                 return gridObject.GetUnitList();
             }
@@ -55,7 +69,7 @@ namespace Game.Grid
         {
             unit = null;
 
-            if (gridSystem.TryGetGridObject(gridPosition, out GridObject gridObject)
+            if (TryGetGridSystem(gridPosition.floor, out GridSystemHex<GridObject> gridSystem) && gridSystem.TryGetGridObject(gridPosition, out GridObject gridObject)
                 && gridObject.TryGetUnit(out unit))
             {
                 return true;
@@ -66,7 +80,7 @@ namespace Game.Grid
 
         public void AddUnitAtGridPosition(GridPosition gridPosition, Unit unit)
         {
-            if (gridSystem.TryGetGridObject(gridPosition, out GridObject gridObject))
+            if (TryGetGridSystem(gridPosition.floor, out GridSystemHex<GridObject> gridSystem) && gridSystem.TryGetGridObject(gridPosition, out GridObject gridObject))
             {
                 gridObject.AddUnit(unit);
             }
@@ -74,7 +88,7 @@ namespace Game.Grid
 
         public void RemoveUnitAtGridPosition(GridPosition gridPosition, Unit unit)
         {
-            if (gridSystem.TryGetGridObject(gridPosition, out GridObject gridObject))
+            if (TryGetGridSystem(gridPosition.floor, out GridSystemHex<GridObject> gridSystem) && gridSystem.TryGetGridObject(gridPosition, out GridObject gridObject))
             {
                 gridObject.RemoveUnit(unit);
             }
@@ -87,19 +101,53 @@ namespace Game.Grid
             //OnAnyUnitMovedGridPosition?.Invoke();
         }
 
-        public GridPosition GetGridPosition(Vector3 worldPosition) => gridSystem.GetGridPosition(worldPosition);
-        public bool IsValidGridPosition(GridPosition gridPosition) => gridSystem.IsValidGridPosition(gridPosition);
-        public bool IsGridBorder(GridPosition gridPosition) => gridSystem.IsGridBorder(gridPosition);
-        public Vector3 GetWorldPositon(GridPosition gridPosition) => gridSystem.GetWorldPositon(gridPosition);
-        public float Distance(GridPosition from, GridPosition to) => gridSystem.Distance(from, to);
+        public int GetFloor(float floorHeight)
+        {
+            return Mathf.RoundToInt(floorHeight / (FLOOR_HEIGHT * cellSize));
+        }
+
+        public bool TryGetGridPosition(Vector3 worldPosition, out GridPosition gridPosition)
+        {
+            int floor = GetFloor(worldPosition.y);
+            if(TryGetGridSystem(floor, out GridSystemHex<GridObject> gridSystem))
+            {
+                gridPosition = gridSystem.GetGridPosition(worldPosition);
+                return true;
+            }
+            gridPosition = new GridPosition();
+            return false;
+        }
+
+        public bool IsValidGridPosition(GridPosition gridPosition) => TryGetGridSystem(gridPosition.floor, out GridSystemHex<GridObject> gridSystem) && gridSystem.IsValidGridPosition(gridPosition);
+
+        public bool TryGetWorldPositon(GridPosition gridPosition, out Vector3 worldPosition)
+        {
+            if(TryGetGridSystem(gridPosition.floor, out GridSystemHex<GridObject> gridSystem))
+            {
+                worldPosition = gridSystem.GetWorldPositon(gridPosition);
+                Debug.Log(worldPosition);
+                return true;
+            }
+            worldPosition = new Vector3();
+            return false;
+        }
+        // TO CONSIDER: Multifloor distance?
+        public float Distance(GridPosition from, GridPosition to)
+        {
+            if (TryGetGridSystem(from.floor, out GridSystemHex<GridObject> gridSystem))
+            {
+                return gridSystem.Distance(from, to);
+            }
+            return float.MaxValue;
+        }
         public int GetWidth() => width;
         public int GetHeight() => height;
         public float GetCellSize() => cellSize;
-        public bool IsUnitInsideTheGrid(Unit unit) => gridSystem.IsValidGridPosition(unit.GetGridPosition());
-        public bool RaycastHorizontal(GridPosition from, GridPosition to, LayerMask layerMask, float? offset = 1.7f) => gridSystem.RaycastHorizontal(from, to, layerMask, offset);
+        public bool IsUnitInsideTheGrid(Unit unit) => TryGetGridSystem(unit.GetGridPosition().floor, out GridSystemHex<GridObject> gridSystem) && gridSystem.IsValidGridPosition(unit.GetGridPosition());
+        public bool RaycastHorizontal(GridPosition from, GridPosition to, LayerMask layerMask, float? offset = 1.7f) => TryGetGridSystem(from.floor, out GridSystemHex<GridObject> gridSystem) && gridSystem.RaycastHorizontal(from, to, layerMask, offset);
         public bool HasAnyUnitOnGridPosition(GridPosition gridPosition)
         {
-            if (gridSystem.TryGetGridObject(gridPosition, out GridObject gridObject))
+            if (TryGetGridSystem(gridPosition.floor, out GridSystemHex<GridObject> gridSystem) && gridSystem.TryGetGridObject(gridPosition, out GridObject gridObject))
             {
                 return gridObject.HasAnyUnit();
             }
@@ -110,7 +158,7 @@ namespace Game.Grid
         {
             interactable = null;
 
-            if(gridSystem.TryGetGridObject(gridPosition, out GridObject gridObject))
+            if(TryGetGridSystem(gridPosition.floor, out GridSystemHex<GridObject> gridSystem) && gridSystem.TryGetGridObject(gridPosition, out GridObject gridObject))
             {
                 interactable = gridObject.GetInteractable();
                 if(interactable == null)
@@ -125,7 +173,7 @@ namespace Game.Grid
 
         public void SetInteractableAtGrid(GridPosition gridPosition, IInteractable door)
         {
-            if (gridSystem.TryGetGridObject(gridPosition, out GridObject gridObject))
+            if (TryGetGridSystem(gridPosition.floor, out GridSystemHex<GridObject> gridSystem) && gridSystem.TryGetGridObject(gridPosition, out GridObject gridObject))
             {
                 gridObject.SetDoor(door);
             }
@@ -139,8 +187,7 @@ namespace Game.Grid
             Vector3 offsetVector = transform.forward * cellSize * positionOffset;
 
             Action<Vector3> AddToList = (Vector3 position) => {
-                var calculatedPosition = GetGridPosition(position);
-                if (calculatedPosition != null && !positions.Contains(calculatedPosition))
+                if(TryGetGridPosition(position, out GridPosition calculatedPosition) && !positions.Contains(calculatedPosition))
                 {
                     positions.Add(calculatedPosition);
                 }
@@ -166,5 +213,29 @@ namespace Game.Grid
 
             return positions;
         }
+
+        internal int GetFloorAmount()
+        {
+            return floorAmount;
+        }
+
+#if UNITY_EDITOR
+        public void DrawLine(List<GridPosition> positions)
+        {
+            for (int i = 0; i < positions.Count - 1; i++)
+            {
+                DrawLine(positions[i], positions[i + 1]);
+            }
+        }
+
+        public void DrawLine(GridPosition fromGrid, GridPosition toGrid)
+        {
+            if (TryGetWorldPositon(fromGrid, out Vector3 from)
+                && TryGetWorldPositon(toGrid, out Vector3 to))
+            {
+                Debug.DrawLine(from, to, Color.red, 3600f);
+            }
+        }
+#endif
     }
 }

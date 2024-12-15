@@ -123,29 +123,37 @@ namespace Game.Actions
                 actionGridPositions.Add(targetVisualType, new List<(GridPosition, float)>());
             }
 
+            System.Diagnostics.Stopwatch stopwatch = new();
             for (int x = -range; x <= range; x++)
             {
                 for (int z = -range; z <= range; z++)
                 {
-                    GridPosition offsetGridPosition = new GridPosition(x, z);
-                    GridPosition testGridPosition = unitPosition + offsetGridPosition;
-
-                    float distance = LevelGrid.Instance.Distance(unitPosition, testGridPosition);
-                    if (Mathf.RoundToInt(distance) > range) continue;
-                    (bool validRange, bool validTarget) = IsValidGridPosition(testGridPosition, out float cost);
-                    var actualCost = GetActionPointCost(cost);
-
-                    if (!validRange || !CanSpendMaxActionPoints(actualCost)) continue;
-                    if (twoDimension)
+                    for (int floor = -range; floor <= range; floor++)
                     {
-                        actionGridPositions[rangeVisualType].Add((testGridPosition, actualCost));
-                    }
+                        GridPosition offsetGridPosition = new GridPosition(x, z, floor);
+                        GridPosition testGridPosition = unitPosition + offsetGridPosition;
 
-                    if (!validTarget || !CanSpendActionPoints(actualCost)) continue;
-                    actionGridPositions[targetVisualType].Add((testGridPosition, actualCost));
+                        float distance = LevelGrid.Instance.Distance(unitPosition, testGridPosition);
+                        if (Mathf.RoundToInt(distance) > range) continue;
+                        stopwatch.Start();
+                        (bool validRange, bool validTarget) = IsValidGridPosition(testGridPosition, out float cost);
+                        stopwatch.Stop();
+
+                        var actualCost = GetActionPointCost(cost);
+
+                        if (!validRange || !CanSpendMaxActionPoints(actualCost)) continue;
+                        if (twoDimension)
+                        {
+                            actionGridPositions[rangeVisualType].Add((testGridPosition, actualCost));
+                        }
+
+                        if (!validTarget || !CanSpendActionPoints(actualCost)) continue;
+                        actionGridPositions[targetVisualType].Add((testGridPosition, actualCost));
+                    }
                 }
             }
 
+            Debug.Log($"Time spent in IsValidGridPosition: {stopwatch.ElapsedMilliseconds}ms");
             OnAnyActionGridUpdate?.Invoke(this);
         }
 
@@ -153,7 +161,8 @@ namespace Game.Actions
         {
             cost = 1;
             bool isValid = LevelGrid.Instance.IsValidGridPosition(targetPosition);
-            return (isValid, isValid);
+            bool isWalkable = isValid && Pathfinding.Instance.IsWalkableGridPosition(targetPosition);
+            return (isValid && isWalkable, isValid && isWalkable);
         }
 
         public int GetTargetGridPositonCount()
@@ -208,10 +217,7 @@ namespace Game.Actions
             return targetPositions[currentTargetPositionIdx].Item1;
         }
 
-        protected Vector3 CurrentTargetVectorPosition()
-        {
-            return LevelGrid.Instance.GetWorldPositon(CurrentTargetPosition());
-        }
+        protected bool TryGetCurrentTargetWorldPosition(out Vector3 worldPosition) => LevelGrid.Instance.TryGetWorldPositon(CurrentTargetPosition(), out worldPosition);
 
         protected float GetActionPointCost(GridPosition targetGridPosition)
         {

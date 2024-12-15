@@ -54,8 +54,10 @@ namespace Game.Interactions
 
         public void SetInteractableAtGrid()
         {
-            var position = LevelGrid.Instance.GetGridPosition(transform.position);
-            LevelGrid.Instance.SetInteractableAtGrid(position, this);
+            if(LevelGrid.Instance.TryGetGridPosition(transform.position, out GridPosition position))
+            {
+                LevelGrid.Instance.SetInteractableAtGrid(position, this);
+            }
         }
     }
 }

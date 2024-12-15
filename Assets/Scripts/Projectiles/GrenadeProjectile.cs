@@ -102,13 +102,15 @@ namespace Game.Projectiles
                 if (collider.TryGetComponent(out Damageable targetObject))
                 {
                     GridPosition unitPosition = targetObject.GetGridPosition();
-                    GridPosition hitGrid = LevelGrid.Instance.GetGridPosition(hitPoint);
-                    float distance = LevelGrid.Instance.Distance(hitGrid, unitPosition);
-                    float distanceDamage = damageAmount * (damageRadius - distance) / damageRadius;
-
-                    if (distanceDamage > 0)
+                    if (LevelGrid.Instance.TryGetGridPosition(hitPoint, out GridPosition hitGrid))
                     {
-                        targetObject.Damage(Mathf.CeilToInt(distanceDamage), hitPoint);
+                        float distance = LevelGrid.Instance.Distance(hitGrid, unitPosition);
+                        float distanceDamage = damageAmount * (damageRadius - distance) / damageRadius;
+
+                        if (distanceDamage > 0)
+                        {
+                            targetObject.Damage(Mathf.CeilToInt(distanceDamage), hitPoint);
+                        }
                     }
                 }
             }
@@ -122,9 +124,11 @@ namespace Game.Projectiles
         {
             startingFromY = transform.position.y;
             this.unitHealth = throwingUnit.GetComponent<HealthSystem>();
-            targetPosition = LevelGrid.Instance.GetWorldPositon(targetGridPositiont);
-            OnGrenadeExplode += callback;
-            totalDistance = Vector3.Distance(FlatPosition(transform.position), FlatPosition(targetPosition));
+            if(LevelGrid.Instance.TryGetWorldPositon(targetGridPositiont, out targetPosition))
+            {
+                OnGrenadeExplode += callback;
+                totalDistance = Vector3.Distance(FlatPosition(transform.position), FlatPosition(targetPosition));
+            }
         }
     }
 }

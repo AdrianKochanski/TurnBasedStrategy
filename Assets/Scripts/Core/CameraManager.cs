@@ -35,16 +35,20 @@ namespace Game.Core
                 case ShootAction shootAction:
                     Unit shooterUnit = shootAction.GetUnit();
                     Unit targetUnit = shootAction.GetTargetUnit();
-                    Vector3 shootDir = (targetUnit.GetWorldPositon() - shooterUnit.GetWorldPositon()).normalized;
+                    if(targetUnit.TryGetWorldPositon(out Vector3 worldTargetPosition) && shooterUnit.TryGetWorldPositon(out Vector3 worldShooterPosition))
+                    {
+                        Vector3 shootDir = (worldTargetPosition - worldShooterPosition).normalized;
 
-                    Vector3 shoulderRightOffset = Quaternion.Euler(0, 90, 0) * shootDir * shootOffsetAmount.x;
-                    Vector3 shoulderUpOffset = Vector3.up * shootOffsetAmount.y;
-                    Vector3 shoulderBackOffset = -1 * shootDir * shootOffsetAmount.z;
-                    Vector3 actionCameraPosition = shooterUnit.GetWorldPositon() + shoulderRightOffset + shoulderUpOffset + shoulderBackOffset;
+                        Vector3 shoulderRightOffset = Quaternion.Euler(0, 90, 0) * shootDir * shootOffsetAmount.x;
+                        Vector3 shoulderUpOffset = Vector3.up * shootOffsetAmount.y;
+                        Vector3 shoulderBackOffset = -1 * shootDir * shootOffsetAmount.z;
+                        Vector3 actionCameraPosition = worldShooterPosition + shoulderRightOffset + shoulderUpOffset + shoulderBackOffset;
 
-                    actionCameraGameObject.transform.position = actionCameraPosition;
-                    actionCameraGameObject.transform.LookAt(targetUnit.GetWorldPositon() + new Vector3(0, shootOffsetAmount.y, 0));
-                    ShowActionCamera();
+                        actionCameraGameObject.transform.position = actionCameraPosition;
+                        actionCameraGameObject.transform.LookAt(worldTargetPosition + new Vector3(0, shootOffsetAmount.y, 0));
+                        ShowActionCamera();
+                    }
+
                     break;
             }
         }

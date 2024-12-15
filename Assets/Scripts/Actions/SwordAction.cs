@@ -52,7 +52,7 @@ namespace Game.Actions
             (bool validRange, bool validTarget) = base.IsValidGridPosition(targetPosition, out cost);
             if (!validRange || !validTarget) return (false, false);
 
-            if (!Pathfinding.Instance.HasPath(unit.GetGridPosition(), targetPosition, out int pathLength)) return (false, false);
+            if (!Pathfinding.Instance.HasPath(unit.GetGridPosition(), targetPosition, GetPossibleActionsCountLimit(), out int pathLength)) return (false, false);
             //cost = (float)pathLength / (float)Pathfinding.Instance.GetMoveCost();
 
             if (!LevelGrid.Instance.TryGetUnitAtGridPosition(targetPosition, out Unit testUnit)
@@ -74,14 +74,17 @@ namespace Game.Actions
         {
             stateTimer -= Time.deltaTime;
 
-            switch (state)
+            if (TryGetCurrentTargetWorldPosition(out Vector3 targetPosition))
             {
-                case State.BeforeHit:
-                    Vector3 moveDirection = (CurrentTargetVectorPosition() - transform.position).normalized;
-                    transform.forward = Vector3.Lerp(transform.forward, moveDirection, rotateAimingSpeed * Time.deltaTime);
-                    break;
-                case State.AfterHit:
-                    return true;
+                switch (state)
+                {
+                    case State.BeforeHit:
+                        Vector3 moveDirection = (targetPosition - transform.position).normalized;
+                        transform.forward = Vector3.Lerp(transform.forward, moveDirection, rotateAimingSpeed * Time.deltaTime);
+                        break;
+                    case State.AfterHit:
+                        return true;
+                }
             }
 
             if (stateTimer <= 0f)
@@ -99,9 +102,9 @@ namespace Game.Actions
                 case State.BeforeHit:
                     state = State.AfterHit;
                     stateTimer = afterHitTime;
-                    if(TryGetNextTargetUnit(out Unit currentTargetUnit))
+                    if(TryGetNextTargetUnit(out Unit currentTargetUnit) && unit.TryGetWorldPositon(out Vector3 worldPosition))
                     {
-                        currentTargetUnit.Damage(damageAmount, unit.GetWorldPositon());
+                        currentTargetUnit.Damage(damageAmount, worldPosition);
                         OnAnySwordHit?.Invoke();
                     }
                     break;
@@ -133,7 +136,7 @@ namespace Game.Actions
 
             foreach (GridPosition testEndPosition in testPositions)
             {
-                Pathfinding.Instance.FindPath(startGridPosition, testEndPosition, out int testEndLength);
+                Pathfinding.Instance.FindPath(startGridPosition, testEndPosition, GetPossibleActionsCountLimit(), out int testEndLength);
                 (var validRange, var validTarget) = moveAction.IsValidGridPosition(testEndPosition, out float cost);
                 if (validTarget && testEndLength < pathLength)
                 {
@@ -147,10 +150,10 @@ namespace Game.Actions
 
         private IEnumerable<GridPosition> GetAdjacentPositions(GridPosition position)
         {
-            GridPosition left = position + new GridPosition(-1, 0);
-            GridPosition right = position + new GridPosition(1, 0);
-            GridPosition up = position + new GridPosition(0, 1);
-            GridPosition down = position + new GridPosition(0, -1);
+            GridPosition left = position + new GridPosition(-1, 0, 0);
+            GridPosition right = position + new GridPosition(1, 0, 0);
+            GridPosition up = position + new GridPosition(0, 1, 0);
+            GridPosition down = position + new GridPosition(0, -1, 0);
             return new List<GridPosition>() { left, right, up, down };
         }
     }
