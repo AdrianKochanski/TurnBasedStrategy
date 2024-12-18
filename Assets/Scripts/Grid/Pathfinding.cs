@@ -1,3 +1,4 @@
+using Game.Interactions;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
@@ -16,7 +17,7 @@ namespace Game.Grid
         [SerializeField] private float obstaclesCheckOffset = 0.4f;
         [Range(0, 5f)]
         [SerializeField] private float obstaclesCheckHeight = 1f;
-        [SerializeField] private Transform pathFindingLinkContainer;
+        //[SerializeField] private Transform pathFindingLinkContainer;
 
         private int width = 10;
         private int height = 10;
@@ -24,7 +25,7 @@ namespace Game.Grid
         private int floorAmount;
         private const int MOVE_COST = 10;
         private List<GridSystemHex<PathNode>> gridSystems = new List<GridSystemHex<PathNode>>();
-        private List<PathfindingLink> pathFindingLinkList = new List<PathfindingLink>();
+        //private List<PathfindingLink> pathFindingLinkList = new List<PathfindingLink>();
 
         private void Awake()
         {
@@ -45,22 +46,22 @@ namespace Game.Grid
             this.cellSize = cellSize;
             this.floorAmount = floorAmount;
 
-            foreach(Transform pathfindingLinkTransform in pathFindingLinkContainer)
-            {
-                if(pathfindingLinkTransform.TryGetComponent(out PathFindingLinkUpdater linkUpdater)
-                    && linkUpdater.TryGetPathfindingLink(out PathfindingLink link))
-                {
-                    pathFindingLinkList.Add(link);
-                }
-            }
+            //foreach(Transform pathfindingLinkTransform in pathFindingLinkContainer)
+            //{
+            //    if(pathfindingLinkTransform.TryGetComponent(out PathFindingLinkUpdater linkUpdater)
+            //        && linkUpdater.TryGetPathfindingLink(out PathfindingLink link))
+            //    {
+            //        pathFindingLinkList.Add(link);
+            //    }
+            //}
 
             for (int floor = 0; floor < floorAmount; floor++)
             {
                 gridSystems.Add(new GridSystemHex<PathNode>(width, height, cellSize, floor, LevelGrid.FLOOR_HEIGHT, (gS, gP) => new PathNode(gP)));
-                if (TryGetGridSystem(floor, out GridSystemHex<PathNode> gridSystem))
-                {
-                    gridSystem.CreateDebugObjects(gridObjectPrefab, transform);
-                }
+                //if (TryGetGridSystem(floor, out GridSystemHex<PathNode> gridSystem))
+                //{
+                //    gridSystem.CreateDebugObjects(gridObjectPrefab, transform);
+                //}
             }
 
             for (int x = 0; x < width; x++)
@@ -138,7 +139,7 @@ namespace Game.Grid
                     }
 
                     closedList.Add(currentNode);
-                    var neighbours = GetNeighbourList(currentNode);
+                    var neighbours = GetNeighbourLinkedList(currentNode.GetGridPosition());
 
                     foreach (PathNode neighbourNode in neighbours)
                     {
@@ -205,10 +206,9 @@ namespace Game.Grid
             return FindPath(startGridPosition, endGridPosition, range, out pathLength).Count() > 0;
         }
 
-        private IEnumerable<PathNode> GetNeighbourList(PathNode currentNode)
+        public IEnumerable<PathNode> GetNeighbourList(GridPosition gridPosition)
         {
-            GridPosition gridPosition = currentNode.GetGridPosition();
-            List<PathNode> neighbourList = new List<PathNode>()
+            return (new List<PathNode>()
             {
                 GetNode(gridPosition.x - 1, gridPosition.z, gridPosition.floor),
                 GetNode(gridPosition.x + 1, gridPosition.z, gridPosition.floor),
@@ -216,33 +216,30 @@ namespace Game.Grid
                 GetNode(gridPosition.x, gridPosition.z + 1, gridPosition.floor),
                 GetNode(gridPosition.z % 2 == 0 ? gridPosition.x - 1 : gridPosition.x + 1, gridPosition.z + 1, gridPosition.floor),
                 GetNode(gridPosition.z % 2 == 0 ? gridPosition.x - 1 : gridPosition.x + 1, gridPosition.z - 1, gridPosition.floor),
-            };
+            }).NotNull().Where(n => n.IsWalkable());
+        }
 
-            neighbourList = neighbourList.NotNull().Where(n => n.IsWalkable()).ToList();
-            List<PathNode> totalNeighbours = new List<PathNode>();
-            totalNeighbours.AddRange(neighbourList);
+        private IEnumerable<PathNode> GetNeighbourLinkedList(GridPosition gridPosition)
+        {
+            List<PathNode> neighbourList = GetNeighbourList(gridPosition).ToList();
             var linkNodes = GetConntectedPathNodes(gridPosition);
-            if(linkNodes.Count() > 0)
+            if (linkNodes.Count() > 0)
             {
-                totalNeighbours.AddRange(linkNodes);
+                neighbourList.AddRange(linkNodes);
             }
 
-            //foreach(var pathNode in neighbourList)
-            //{
-            //    GridPosition nodePosition = pathNode.GetGridPosition();
-            //    var upFloorNode = GetNode(nodePosition.x, nodePosition.z, nodePosition.floor + 1);
-            //    var downFloorNode = GetNode(nodePosition.x, nodePosition.z, nodePosition.floor - 1);
-            //    totalNeighbours.Add(upFloorNode);
-            //    totalNeighbours.Add(downFloorNode);
-            //}
-
-            return totalNeighbours.NotNull().Where(n => n.IsWalkable());
+            return neighbourList;
         }
+
         private IEnumerable<PathNode> GetConntectedPathNodes(GridPosition gridPosition)
         {
-            return pathFindingLinkList.Where(e => e.gridPositionA == gridPosition).Select(e => e.gridPositionB).Union(
-                pathFindingLinkList.Where(e => e.gridPositionB == gridPosition).Select(e => e.gridPositionA)
-            ).Select(e => GetNode(e.x, e.z, e.floor));
+            if (LevelGrid.Instance.TryGetInteractableAtGrid(gridPosition, out IInteractable interactable)
+                && interactable is Lift lift && lift.TryGetConnectedLinks(gridPosition, out IEnumerable<GridPosition> connectedGrids))
+            {
+                return connectedGrids.Select(g => GetNode(g.x, g.z, g.floor)).NotNull().Where(n => n.IsWalkable());
+            }
+
+            return Enumerable.Empty<PathNode>();
         }
 
         private PathNode GetNode(int x, int z, int floor)

@@ -1,8 +1,6 @@
 using Game.Grid;
-using System;
-using Unity.VisualScripting.Antlr3.Runtime;
+using Game.Units;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace Game.Interactions
 {

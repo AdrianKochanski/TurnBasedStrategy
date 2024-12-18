@@ -125,7 +125,6 @@ namespace Game.Grid
             if(TryGetGridSystem(gridPosition.floor, out GridSystemHex<GridObject> gridSystem))
             {
                 worldPosition = gridSystem.GetWorldPositon(gridPosition);
-                Debug.Log(worldPosition);
                 return true;
             }
             worldPosition = new Vector3();
@@ -171,11 +170,11 @@ namespace Game.Grid
             return false;
         }
 
-        public void SetInteractableAtGrid(GridPosition gridPosition, IInteractable door)
+        public void SetInteractableAtGrid(GridPosition gridPosition, IInteractable interactable)
         {
             if (TryGetGridSystem(gridPosition.floor, out GridSystemHex<GridObject> gridSystem) && gridSystem.TryGetGridObject(gridPosition, out GridObject gridObject))
             {
-                gridObject.SetDoor(door);
+                gridObject.SetInteractable(interactable);
             }
         }
 

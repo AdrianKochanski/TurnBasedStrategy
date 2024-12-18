@@ -22,7 +22,9 @@ namespace Game.Units
             if(TryGetComponent(out MoveAction moveAction))
             {
                 moveAction.onActionBegin += MoveAction_StartMoving;
+                moveAction.onStartWalking += MoveAction_StartMoving;
                 moveAction.onActionComplete += MoveAction_StopMoving;
+                moveAction.onStopWalking += MoveAction_StopMoving;
             }
 
             if (TryGetComponent(out ShootAction shootAction))

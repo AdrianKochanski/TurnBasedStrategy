@@ -57,9 +57,9 @@ namespace Game.Grid
             return interactable;
         }
 
-        public void SetDoor(IInteractable door)
+        public void SetInteractable(IInteractable interactable)
         { 
-            this.interactable = door;
+            this.interactable = interactable;
         }
     }
 }

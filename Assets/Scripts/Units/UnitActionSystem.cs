@@ -72,6 +72,15 @@ namespace Game.Units
             return selectedAction;
         }
 
+        public bool HandleChainedAction(BaseAction action, List<GridPosition> positions)
+        {
+            BaseAction selectedActionTemp = selectedAction;
+            SetSelectedAction(action);
+            bool result = action.TryStartAction(positions);
+            SetSelectedAction(selectedActionTemp);
+            return result;
+        }
+
         private void BaseAction_OnAnyActionBegin(BaseAction action)
         {
             isBusy = true;

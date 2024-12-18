@@ -1,7 +1,10 @@
 using Game.Grid;
+using Game.Interactions;
 using Game.Units;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using TMPro;
 using UnityEngine;
 
 namespace Game.Actions
@@ -13,13 +16,27 @@ namespace Game.Actions
         [SerializeField] private float stoppingDistance = .1f;
         [SerializeField] private float rotationTolerance = 1f;
 
+        // Move to Lift?
+        public event Action onStopWalking;
+        public event Action onStartWalking;
+
         private State state = State.Rotating;
+        private InteractAction interactAction;
 
         private enum State
         {
             Rotating,
             Walking,
-            Climbing
+            CallTheLift,
+            WaitForLift,
+            GetIntoTheLift,
+            InLift
+        }
+
+        protected override void Awake()
+        {
+            base.Awake();
+            interactAction = gameObject.GetComponent<InteractAction>();
         }
 
         public override bool UpdateAction()
@@ -28,15 +45,16 @@ namespace Game.Actions
             {
                 GridPosition currentTargetPosition = CurrentTargetPosition();
                 GridPosition currentUnitPosition = unit.GetGridPosition();
-                GridPosition downLiftPosition = new GridPosition(currentTargetPosition.x, currentTargetPosition.z, currentUnitPosition.floor);
+                bool foundLift = GetLiftAtGridPositions(currentUnitPosition, currentTargetPosition, out Lift lift, out GridPosition liftGrid);
+                bool needsLift = currentUnitPosition.floor != currentTargetPosition.floor;
                 Vector3 moveDirection = (targetPosition - transform.position).normalized;
                 moveDirection.y = 0f;
                 transform.forward = Vector3.Lerp(transform.forward, moveDirection, rotateSpeed * Time.deltaTime);
 
+                Debug.Log(state);
                 switch (state)
                 {
                     case State.Rotating:
-                        Debug.Log($"Rotating: {transform.position}");
                         float angleDifference = Vector3.Angle(transform.forward, moveDirection);
                         if (angleDifference <= rotationTolerance)
                         {
@@ -44,24 +62,9 @@ namespace Game.Actions
                         }
                         break;
                     case State.Walking:
-                        Debug.Log($"Walking: {transform.position}");
-                        // Lift logic
-                        if(currentTargetPosition.floor < currentUnitPosition.floor 
-                            && LevelGrid.Instance.TryGetWorldPositon(downLiftPosition, out Vector3 downLiftVectorPosition))
+                        if(needsLift)
                         {
-                            if(Vector3.Distance(transform.position, downLiftVectorPosition) > stoppingDistance)
-                            {
-                                moveDirection = (downLiftVectorPosition - transform.position).normalized;
-                                transform.position += moveDirection * moveSpeed * Time.deltaTime;
-                            }
-                            else
-                            {
-                                state = State.Climbing;
-                            }
-                        }
-                        else if(currentTargetPosition.floor > currentUnitPosition.floor)
-                        {
-                            state = State.Climbing;
+                            state = State.CallTheLift;
                         }
                         else if(Vector3.Distance(transform.position, targetPosition) > stoppingDistance)
                         {
@@ -74,17 +77,46 @@ namespace Game.Actions
                             return true;
                         }
                         break;
-                    case State.Climbing:
-                        Debug.Log($"Climbing: {transform.position} - {this.unit.transform.position}");
-                        if (LevelGrid.Instance.TryGetWorldPositon(CurrentTargetPosition(), out Vector3 targetVector3)
-                            && Mathf.Abs(targetVector3.y - this.unit.transform.position.y) > stoppingDistance)
+                    case State.CallTheLift:
+                        if(NeedsToCallTheLift(currentUnitPosition, currentTargetPosition, lift))
                         {
-                            Vector3 climbingDirection = (targetVector3.y - this.unit.transform.position.y) * Vector3.up;
-                            transform.position += climbingDirection * moveSpeed * Time.deltaTime;
+                            if(!UnitActionSystem.Instance.HandleChainedAction(interactAction, new List<GridPosition>() { liftGrid }))
+                            {
+                                state = State.Rotating;
+                                return true;
+                            }
+                        }
+                        onStopWalking?.Invoke();
+                        state = State.WaitForLift;
+                        break;
+                    case State.WaitForLift:
+                        if (CanGetIntoTheLift(currentUnitPosition, currentTargetPosition, lift))
+                        {
+                            state = State.GetIntoTheLift;
+                            onStartWalking?.Invoke();
+                        }
+                        break;
+                    case State.GetIntoTheLift:
+                        if (Vector3.Distance(transform.position, lift.GetLiftPlatformPosition()) > stoppingDistance)
+                        {
+                            moveDirection = (lift.GetLiftPlatformPosition() - transform.position).normalized;
+                            transform.position += moveDirection * moveSpeed * Time.deltaTime;
                         }
                         else
                         {
-                            transform.position = new Vector3(transform.position.x, targetVector3.y, transform.position.z);
+                            if (!UnitActionSystem.Instance.HandleChainedAction(interactAction, new List<GridPosition>() { currentUnitPosition }))
+                            {
+                                state = State.Rotating;
+                                return true;
+                            }
+                            onStopWalking?.Invoke();
+                            state = State.InLift;
+                        }
+                        break;
+                    case State.InLift:
+                        if (Math.Abs((targetPosition.y - lift.GetLiftPlatformPosition().y)) <= stoppingDistance)
+                        {
+                            onStartWalking?.Invoke();
                             state = State.Walking;
                         }
                         break;
@@ -127,6 +159,54 @@ namespace Game.Actions
                 gridPosition = gridPosition,
                 actionValue = shootAction.GetTargetGridPositonCount() * 10
             };
+        }
+
+        private bool GetLiftAtGridPositions(GridPosition unitPosition, GridPosition targetPosition, out Lift lift, out GridPosition liftGrid)
+        {
+            if(LevelGrid.Instance.TryGetInteractableAtGrid(unitPosition, out IInteractable interactable) && interactable is Lift)
+            {
+                liftGrid = unitPosition;
+                lift = interactable as Lift;
+                return true;
+            }
+            else if(LevelGrid.Instance.TryGetInteractableAtGrid(targetPosition, out interactable) && interactable is Lift)
+            {
+                liftGrid = targetPosition;
+                lift = interactable as Lift;
+                return true;
+            }
+
+            lift = null;
+            liftGrid = new GridPosition();
+            return false;
+        }
+
+        private bool CanGetIntoTheLift(GridPosition unitPosition, GridPosition targetPosition, Lift lift)
+        {
+            var liftState = lift.GetState();
+            if (unitPosition.floor > targetPosition.floor)
+            {
+                return liftState == Lift.State.PositionUp;
+            }
+            else if (unitPosition.floor < targetPosition.floor)
+            {
+                return liftState == Lift.State.PositionDown;
+            }
+            return false;
+        }
+
+        private bool NeedsToCallTheLift(GridPosition unitPosition, GridPosition targetPosition, Lift lift)
+        {
+            var liftState = lift.GetState();
+            if(unitPosition.floor > targetPosition.floor)
+            {
+                return liftState == Lift.State.PositionDown || liftState == Lift.State.MoveDown;
+            }
+            else if(unitPosition.floor < targetPosition.floor)
+            {
+                return liftState == Lift.State.PositionUp || liftState == Lift.State.MoveUp;
+            }
+            return false;
         }
     }
 }

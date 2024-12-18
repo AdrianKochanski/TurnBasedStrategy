@@ -123,7 +123,6 @@ namespace Game.Actions
                 actionGridPositions.Add(targetVisualType, new List<(GridPosition, float)>());
             }
 
-            System.Diagnostics.Stopwatch stopwatch = new();
             for (int x = -range; x <= range; x++)
             {
                 for (int z = -range; z <= range; z++)
@@ -135,9 +134,7 @@ namespace Game.Actions
 
                         float distance = LevelGrid.Instance.Distance(unitPosition, testGridPosition);
                         if (Mathf.RoundToInt(distance) > range) continue;
-                        stopwatch.Start();
                         (bool validRange, bool validTarget) = IsValidGridPosition(testGridPosition, out float cost);
-                        stopwatch.Stop();
 
                         var actualCost = GetActionPointCost(cost);
 
@@ -153,7 +150,6 @@ namespace Game.Actions
                 }
             }
 
-            Debug.Log($"Time spent in IsValidGridPosition: {stopwatch.ElapsedMilliseconds}ms");
             OnAnyActionGridUpdate?.Invoke(this);
         }
 
