@@ -25,7 +25,8 @@ namespace Game.Grid
         private int floorAmount;
         private const int MOVE_COST = 10;
         private List<GridSystemHex<PathNode>> gridSystems = new List<GridSystemHex<PathNode>>();
-        //private List<PathfindingLink> pathFindingLinkList = new List<PathfindingLink>();
+        // Needst to be updated on changing is walkable on any grid position
+        private Dictionary<GridPosition, HashSet<PathNode>> precomputedNeighbors;
 
         private void Awake()
         {
@@ -46,23 +47,14 @@ namespace Game.Grid
             this.cellSize = cellSize;
             this.floorAmount = floorAmount;
 
-            //foreach(Transform pathfindingLinkTransform in pathFindingLinkContainer)
-            //{
-            //    if(pathfindingLinkTransform.TryGetComponent(out PathFindingLinkUpdater linkUpdater)
-            //        && linkUpdater.TryGetPathfindingLink(out PathfindingLink link))
-            //    {
-            //        pathFindingLinkList.Add(link);
-            //    }
-            //}
-
             for (int floor = 0; floor < floorAmount; floor++)
             {
                 gridSystems.Add(new GridSystemHex<PathNode>(width, height, cellSize, floor, LevelGrid.FLOOR_HEIGHT, (gS, gP) => new PathNode(gP)));
-                //if (TryGetGridSystem(floor, out GridSystemHex<PathNode> gridSystem))
-                //{
-                //    gridSystem.CreateDebugObjects(gridObjectPrefab, transform);
-                //}
             }
+            //if (TryGetGridSystem(0, out GridSystemHex<PathNode> gridSystem2))
+            //{
+            //    gridSystem2.CreateDebugObjects(gridObjectPrefab, transform);
+            //}
 
             for (int x = 0; x < width; x++)
             {
@@ -85,7 +77,37 @@ namespace Game.Grid
                     }
                 }
             }
+
+            InitializeNeighbors();
         }
+
+        private void InitializeNeighbors()
+        {
+            precomputedNeighbors = new Dictionary<GridPosition, HashSet<PathNode>>();
+
+            for (int x = 0; x < width; x++)
+            {
+                for (int z = 0; z < height; z++)
+                {
+                    for (int floor = 0; floor < floorAmount; floor++)
+                    {
+                        GridPosition gridPosition = new GridPosition(x, z, floor);
+
+                        if (TryGetGridSystem(floor, out GridSystemHex<PathNode> gridSystem) &&
+                            gridSystem.TryGetGridObject(gridPosition, out PathNode currentNode) &&
+                            currentNode.IsWalkable())
+                        {
+                            HashSet<PathNode> neighbors = new HashSet<PathNode>(
+                                GetNeighbourList(gridPosition).Where(n => n.IsWalkable())
+                            );
+
+                            precomputedNeighbors[gridPosition] = neighbors;
+                        }
+                    }
+                }
+            }
+        }
+
 
         private bool TryGetGridSystem(int floor, out GridSystemHex<PathNode> gridSystem)
         {
@@ -102,7 +124,8 @@ namespace Game.Grid
         {
             GridPosition startGridPosition = unit.GetGridPosition();
             PriorityQueue<PathNode> openList = new();
-            List<PathNode> closedList = new List<PathNode>();
+            HashSet<PathNode> openSet = new();
+            HashSet<PathNode> closedList = new();
 
             for (int x = 0; x < width; x++)
             {
@@ -125,6 +148,7 @@ namespace Game.Grid
                 && TryGetGridSystem(endGridPosition.floor, out GridSystemHex<PathNode> endGridSystem) && endGridSystem.TryGetGridObject(endGridPosition, out PathNode endNode))
             {
                 openList.Enqueue(startNode);
+                openSet.Add(startNode);
                 startNode.SetGCost(0);
                 startNode.SetHCost(Distance(startGridPosition, endGridPosition));
                 startNode.CalculateFCost();
@@ -132,6 +156,7 @@ namespace Game.Grid
                 while (openList.Count > 0)
                 {
                     PathNode currentNode = openList.Dequeue();
+                    openSet.Remove(currentNode);
 
                     if (currentNode == endNode)
                     {
@@ -154,11 +179,12 @@ namespace Game.Grid
                             neighbourNode.SetHCost(Distance(neighbourNode.GetGridPosition(), endGridPosition));
                             neighbourNode.CalculateFCost();
 
-                            if (!openList.Contains(neighbourNode))
+                            if (!openSet.Contains(neighbourNode))
                             {
                                 if (range == null || (range != null) && (tentativeGCost <= range * MOVE_COST))
                                 {
                                     openList.Enqueue(neighbourNode);
+                                    openSet.Add(neighbourNode);
                                 }
                             }
                         }
@@ -197,9 +223,9 @@ namespace Game.Grid
             }
         }
 
-        public bool IsWalkableGridPosition(GridPosition gridPosition)
+        public bool IsValidGridPosition(GridPosition gridPosition)
         {
-            return TryGetGridSystem(gridPosition.floor, out GridSystemHex<PathNode> gridSystem) && gridSystem.TryGetGridObject(gridPosition, out PathNode pathNode) && pathNode.IsWalkable();
+            return TryGetGridSystem(gridPosition.floor, out GridSystemHex<PathNode> gridSystem) && gridSystem.TryGetGridObject(gridPosition, out PathNode pathNode) && pathNode.IsValidGridPosition();
         }
 
         public bool HasPath(Unit unit, GridPosition endGridPosition, int range, out int pathLength)
@@ -209,10 +235,13 @@ namespace Game.Grid
 
         private IEnumerable<PathNode> GetNeighbourLinkedList(Unit unit, GridPosition gridPosition)
         {
-            List<PathNode> neighbourList = GetNeighbourList(gridPosition).ToList();
+            if (!precomputedNeighbors.TryGetValue(gridPosition, out var neighborSet))
+            {
+                return Enumerable.Empty<PathNode>();
+            }
+
             var linkNodes = GetConntectedPathNodes(unit, gridPosition);
-            neighbourList.AddRange(linkNodes);
-            return neighbourList;
+            return neighborSet.Concat(linkNodes);
         }
 
         public IEnumerable<PathNode> GetNeighbourList(GridPosition gridPosition)

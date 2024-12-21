@@ -32,12 +32,13 @@ public class GrenadeAction : BaseAction
     {
         if(TryGetCurrentTargetWorldPosition(out Vector3 targetPosition))
         {
+            Debug.Log(state);
             switch (state)
             {
                 case State.Rotating:
 
                     Vector3 moveDirection = (targetPosition - transform.position).normalized;
-                    transform.forward = Vector3.Lerp(transform.forward, moveDirection, rotateAimingSpeed * Time.deltaTime);
+                    transform.forward = Vector3.Slerp(transform.forward, moveDirection, rotateAimingSpeed * Time.deltaTime);
 
                     float angleDifference = Vector3.Angle(transform.forward, moveDirection);
                     if (angleDifference <= rotationTolerance)
@@ -103,6 +104,7 @@ public class GrenadeAction : BaseAction
 
     public void TargetReached()
     {
+        Debug.Log("TargetReached");
         state = State.TargetReached;
     }
 

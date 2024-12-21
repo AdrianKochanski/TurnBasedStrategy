@@ -68,7 +68,7 @@ public class InteractAction : BaseAction
                 case State.BeforeInteraction:
                     Vector3 moveDirection = (targetPosition - transform.position).normalized;
                     float angleDifference = Vector3.Angle(transform.forward, moveDirection);
-                    transform.forward = Vector3.Lerp(transform.forward, moveDirection, rotateSpeed * Time.deltaTime);
+                    transform.forward = Vector3.Slerp(transform.forward, moveDirection, rotateSpeed * Time.deltaTime);
                     if (GridPosition.IsParallel(CurrentTargetPosition(), unit.GetGridPosition()) || angleDifference <= rotationTolerance)
                     {
                         state = State.Interaction;

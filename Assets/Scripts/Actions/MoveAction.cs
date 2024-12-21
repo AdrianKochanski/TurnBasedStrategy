@@ -49,7 +49,7 @@ namespace Game.Actions
                 bool needsLift = currentUnitPosition.floor != currentTargetPosition.floor;
                 Vector3 moveDirection = (targetPosition - transform.position).normalized;
                 moveDirection.y = 0f;
-                transform.forward = Vector3.Lerp(transform.forward, moveDirection, rotateSpeed * Time.deltaTime);
+                transform.forward = Vector3.Slerp(transform.forward, moveDirection, rotateSpeed * Time.deltaTime);
 
                 switch (state)
                 {

@@ -44,8 +44,9 @@ namespace Game.Actions
                 switch (state)
                 {
                     case State.Aiming:
-                        Vector3 moveDirection = (targetPosition - transform.position).normalized;
-                        transform.forward = Vector3.Lerp(transform.forward, moveDirection, rotateAimingSpeed * Time.deltaTime);
+                        Vector3 aimDirection = (targetPosition - transform.position).normalized;
+                        aimDirection.y = 0;
+                        transform.forward = Vector3.Slerp(transform.forward, aimDirection, rotateAimingSpeed * Time.deltaTime);
                         break;
                     case State.Shooting:
                         if (canShootBullet)
@@ -105,7 +106,6 @@ namespace Game.Actions
         {
             (bool validRange, bool validTarget) = base.IsValidGridPosition(targetPosition, out cost);
             if (!validRange || !validTarget) return (false, false);
-            if (!LevelGrid.Instance.IsUnitInsideTheGrid(unit)) return (false, false);
             if (LevelGrid.Instance.RaycastHorizontal(unit.GetGridPosition(), targetPosition, obstaclesLayerMask)) return (false, false);
             if (!LevelGrid.Instance.TryGetUnitAtGridPosition(targetPosition, out Unit testUnit)
                 || (unit.IsEnemy() == testUnit.IsEnemy())

@@ -51,10 +51,6 @@ namespace Game.Actions
         {
             (bool validRange, bool validTarget) = base.IsValidGridPosition(targetPosition, out cost);
             if (!validRange || !validTarget) return (false, false);
-
-            if (!Pathfinding.Instance.HasPath(unit, targetPosition, GetPossibleActionsCountLimit(), out int pathLength)) return (false, false);
-            //cost = (float)pathLength / (float)Pathfinding.Instance.GetMoveCost();
-
             if (!LevelGrid.Instance.TryGetUnitAtGridPosition(targetPosition, out Unit testUnit)
                 || (unit.IsEnemy() == testUnit.IsEnemy())
                 || testUnit.IsDead()
@@ -80,7 +76,7 @@ namespace Game.Actions
                 {
                     case State.BeforeHit:
                         Vector3 moveDirection = (targetPosition - transform.position).normalized;
-                        transform.forward = Vector3.Lerp(transform.forward, moveDirection, rotateAimingSpeed * Time.deltaTime);
+                        transform.forward = Vector3.Slerp(transform.forward, moveDirection, rotateAimingSpeed * Time.deltaTime);
                         break;
                     case State.AfterHit:
                         return UpdateActionResult.NextStep;

@@ -1,79 +1,104 @@
-using System;
 using System.Collections.Generic;
+using System;
 
 public class PriorityQueue<T> where T : IComparable<T>
 {
-    private List<T> items;
+    private T[] items;
+    private HashSet<T> itemSet;
+    private int size;
+    private const int InitialCapacity = 16;
 
     public PriorityQueue()
     {
-        items = new List<T>();
+        items = new T[InitialCapacity];
+        itemSet = new HashSet<T>();
+        size = 0;
     }
 
-    public int Count => items.Count;
+    public int Count => size;
 
     public void Enqueue(T item)
     {
-        items.Add(item);
-        int currentIndex = items.Count - 1;
+        if (!itemSet.Add(item)) return; 
 
-        // Bubble up
-        while (currentIndex > 0)
-        {
-            int parentIndex = (currentIndex - 1) / 2;
+        if (size == items.Length) Resize(items.Length * 2);
 
-            if (items[currentIndex].CompareTo(items[parentIndex]) >= 0)
-                break;
-
-            Swap(currentIndex, parentIndex);
-            currentIndex = parentIndex;
-        }
+        items[size] = item;
+        BubbleUp(size);
+        size++;
     }
 
     public T Dequeue()
     {
-        if (items.Count == 0)
+        if (size == 0)
             throw new InvalidOperationException("The priority queue is empty.");
 
         T result = items[0];
+        itemSet.Remove(result);
 
-        // Move the last element to the root and bubble down
-        items[0] = items[items.Count - 1];
-        items.RemoveAt(items.Count - 1);
-
-        int currentIndex = 0;
-
-        while (true)
+        size--;
+        if (size > 0)
         {
-            int leftChildIndex = 2 * currentIndex + 1;
-            int rightChildIndex = 2 * currentIndex + 2;
-            int smallestIndex = currentIndex;
-
-            if (leftChildIndex < items.Count && items[leftChildIndex].CompareTo(items[smallestIndex]) < 0)
-                smallestIndex = leftChildIndex;
-
-            if (rightChildIndex < items.Count && items[rightChildIndex].CompareTo(items[smallestIndex]) < 0)
-                smallestIndex = rightChildIndex;
-
-            if (smallestIndex == currentIndex)
-                break;
-
-            Swap(currentIndex, smallestIndex);
-            currentIndex = smallestIndex;
+            items[0] = items[size];
+            BubbleDown(0);
         }
+        items[size] = default;
 
         return result;
     }
 
     public bool Contains(T item)
     {
-        return items.Contains(item);
+        return itemSet.Contains(item);
     }
 
-    private void Swap(int index1, int index2)
+    private void BubbleUp(int index)
     {
-        T temp = items[index1];
-        items[index1] = items[index2];
-        items[index2] = temp;
+        while (index > 0)
+        {
+            int parentIndex = (index - 1) / 2;
+
+            if (items[index].CompareTo(items[parentIndex]) >= 0)
+                break;
+
+            Swap(index, parentIndex);
+            index = parentIndex;
+        }
+    }
+
+    private void BubbleDown(int index)
+    {
+        while (true)
+        {
+            int leftChild = 2 * index + 1;
+            int rightChild = 2 * index + 2;
+            int smallest = index;
+
+            if (leftChild < size && items[leftChild].CompareTo(items[smallest]) < 0)
+                smallest = leftChild;
+
+            if (rightChild < size && items[rightChild].CompareTo(items[smallest]) < 0)
+                smallest = rightChild;
+
+            if (smallest == index)
+                break;
+
+            Swap(index, smallest);
+            index = smallest;
+        }
+    }
+
+    private void Swap(int i, int j)
+    {
+        T temp = items[i];
+        items[i] = items[j];
+        items[j] = temp;
+    }
+
+    private void Resize(int newCapacity)
+    {
+        T[] newArray = new T[newCapacity];
+        Array.Copy(items, newArray, size);
+        items = newArray;
     }
 }

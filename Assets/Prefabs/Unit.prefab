@@ -444,6 +444,7 @@ MonoBehaviour:
   rotateSpeed: 10
   moveSpeed: 4
   stoppingDistance: 0.1
+  rotationTolerance: 1
 --- !u!114 &7368179265212297104
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -489,7 +490,7 @@ MonoBehaviour:
   rangeVisualType: 5
   obstaclesLayerMask:
     serializedVersion: 2
-    m_Bits: 256
+    m_Bits: 320
   aimingStateTime: 0.9
   shootingStateTime: 0.4
   cooloffStateTime: 0.5
@@ -516,6 +517,8 @@ MonoBehaviour:
   obstaclesLayerMask:
     serializedVersion: 2
     m_Bits: 256
+  rotateAimingSpeed: 10
+  rotationTolerance: 1
 --- !u!114 &4443345028516893942
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -564,8 +567,9 @@ MonoBehaviour:
   obstaclesLayerMask:
     serializedVersion: 2
     m_Bits: 256
-  beforeInteractiontTime: 0.7
   rotateAimingSpeed: 10
+  rotationTolerance: 1
+  rotateSpeed: 10
 --- !u!114 &43732584394111020
 MonoBehaviour:
   m_ObjectHideFlags: 0

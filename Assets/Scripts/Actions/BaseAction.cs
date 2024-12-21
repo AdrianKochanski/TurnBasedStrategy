@@ -177,7 +177,7 @@ namespace Game.Actions
         {
             cost = 1;
             bool isValid = LevelGrid.Instance.IsValidGridPosition(targetPosition);
-            bool isWalkable = isValid && Pathfinding.Instance.IsWalkableGridPosition(targetPosition);
+            bool isWalkable = isValid && Pathfinding.Instance.IsValidGridPosition(targetPosition);
             return (isValid && isWalkable, isValid && isWalkable);
         }
 

@@ -75,7 +75,12 @@ namespace Game.Grid
 
         internal bool IsWalkable()
         {
-            return isWalkable && !LevelGrid.Instance.TryGetUnitAtGridPosition(_gridPosition, out Unit unit);
+            return IsValidGridPosition() && !LevelGrid.Instance.TryGetUnitAtGridPosition(_gridPosition, out Unit unit);
+        }
+
+        internal bool IsValidGridPosition()
+        {
+            return isWalkable;
         }
 
         internal void SetWalkable(bool isWalkable)
