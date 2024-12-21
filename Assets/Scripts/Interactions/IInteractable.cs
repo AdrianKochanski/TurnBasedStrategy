@@ -5,8 +5,9 @@ namespace Game.Interactions
 {
     public interface IInteractable
     {
-        float Interact();
-        bool CanInteract();
+        void Interact();
+        bool FinishedInteraction();
+        bool CanInteract(Unit unit);
         void SetInteractableAtGrid();
     }
 }

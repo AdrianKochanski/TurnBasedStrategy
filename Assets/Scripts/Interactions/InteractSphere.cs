@@ -11,12 +11,25 @@ namespace Game.Interactions
         [SerializeField] private MeshRenderer meshRenderer;
         [SerializeField] private float afterInteractiontTime = .5f;
 
+        private float timer;
         private bool isGreen;
 
         private void Start()
         {
             SetInteractableAtGrid();
             SetColorGreen();
+        }
+
+        private void Update()
+        {
+            if (timer > 0)
+            {
+                timer -= Time.deltaTime;
+            }
+            else
+            {
+                timer = 0;
+            }
         }
 
         private void SetColorGreen()
@@ -31,7 +44,7 @@ namespace Game.Interactions
             meshRenderer.material = redMaterial;
         }
 
-        public float Interact()
+        public void Interact()
         {
             if(isGreen)
             {
@@ -41,11 +54,9 @@ namespace Game.Interactions
             {
                 SetColorGreen();
             }
-
-            return afterInteractiontTime;
         }
 
-        public bool CanInteract()
+        public bool CanInteract(Unit unit)
         {
             return true;
         }
@@ -56,6 +67,11 @@ namespace Game.Interactions
             {
                 LevelGrid.Instance.SetInteractableAtGrid(position, this);
             }
+        }
+
+        public bool FinishedInteraction()
+        {
+            return timer == 0;
         }
     }
 }

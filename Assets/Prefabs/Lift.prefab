@@ -2983,7 +2983,7 @@ Transform:
   - {fileID: 7302419523726339806}
   - {fileID: 7302419523970289482}
   m_Father: {fileID: 0}
-  m_RootOrder: 24
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1715613180204748450
 MonoBehaviour:
@@ -3001,7 +3001,7 @@ MonoBehaviour:
   upPosition: {fileID: 267945385023727037}
   downPosition: {fileID: 673916203878354}
   state: 1
-  afterInteractiontTime: 0.5
+  afterInteractiontTime: 3
   moveSpeed: 4
   stoppingDistance: 0.1
 --- !u!1001 &7297982441760653978

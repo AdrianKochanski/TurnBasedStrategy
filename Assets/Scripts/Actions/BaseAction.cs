@@ -20,7 +20,7 @@ namespace Game.Actions
         [SerializeField] protected GridVisualType rangeVisualType = GridVisualType.Yellow;
         [SerializeField] protected LayerMask obstaclesLayerMask;
 
-        protected enum UpdateActionResult
+        public enum UpdateActionResult
         {
             NextStep,
             Break,

@@ -3,19 +3,22 @@ using Game.Grid;
 using Game.Interactions;
 using Game.Units;
 using System.Collections.Generic;
+using System.Linq;
+using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class InteractAction : BaseAction
 {
-    [SerializeField] private float beforeInteractiontTime = .7f;
     [SerializeField] private float rotateAimingSpeed = 10f;
+    [SerializeField] private float rotationTolerance = 1f;
+    [SerializeField] private float rotateSpeed = 10f;
 
     private State state;
-    private float stateTimer;
-    private bool interactionFinished = false;
     private enum State
     {
         BeforeInteraction,
+        Interaction,
         AfterInteraction
     }
 
@@ -38,7 +41,7 @@ public class InteractAction : BaseAction
     {
         (bool validRange, bool validTarget) = base.IsValidGridPosition(targetPosition, out cost);
 
-        if (LevelGrid.Instance.TryGetInteractableAtGrid(targetPosition, out IInteractable interactable) && interactable.CanInteract())
+        if (LevelGrid.Instance.TryGetInteractableAtGrid(targetPosition, out IInteractable interactable) && interactable.CanInteract(unit))
         {
             return (true, true);
         }
@@ -48,53 +51,40 @@ public class InteractAction : BaseAction
 
     public override bool TryStartAction(List<GridPosition> targetGridPositions)
     {
-        stateTimer = beforeInteractiontTime;
         state = State.BeforeInteraction;
-        interactionFinished = false;
-        return base.TryStartAction(targetGridPositions);
+        if(LevelGrid.Instance.TryGetInteractableAtGrid(targetGridPositions.First(), out IInteractable interactable) && interactable.FinishedInteraction() && interactable.CanInteract(unit))
+        {
+            return base.TryStartAction(targetGridPositions);
+        }
+        return false;
     }
 
     protected override UpdateActionResult UpdateAction()
     {
-        stateTimer -= Time.deltaTime;
-
-        if (TryGetCurrentTargetWorldPosition(out Vector3 targetPosition))
+        if (TryGetNextInteractable(out IInteractable interactable) && TryGetCurrentTargetWorldPosition(out Vector3 targetPosition))
         {
             switch (state)
             {
                 case State.BeforeInteraction:
-                    if(!GridPosition.IsParallel(CurrentTargetPosition(), unit.GetGridPosition()))
+                    Vector3 moveDirection = (targetPosition - transform.position).normalized;
+                    float angleDifference = Vector3.Angle(transform.forward, moveDirection);
+                    transform.forward = Vector3.Lerp(transform.forward, moveDirection, rotateSpeed * Time.deltaTime);
+                    if (GridPosition.IsParallel(CurrentTargetPosition(), unit.GetGridPosition()) || angleDifference <= rotationTolerance)
                     {
-                        Vector3 moveDirection = (targetPosition - transform.position).normalized;
-                        transform.forward = Vector3.Lerp(transform.forward, moveDirection, rotateAimingSpeed * Time.deltaTime);
+                        state = State.Interaction;
                     }
                     break;
+                case State.Interaction:
+                    interactable.Interact();
+                    state = State.AfterInteraction;
+                    break;
                 case State.AfterInteraction:
-                    return UpdateActionResult.NextStep;
+                    if(interactable.FinishedInteraction())
+                    {
+                        return UpdateActionResult.NextStep;
+                    }
+                    break;
             }
-        }
-
-        if (stateTimer <= 0f)
-        {
-            return NextState();
-        }
-
-        return UpdateActionResult.Continue;
-    }
-
-    private UpdateActionResult NextState()
-    {
-        switch (state)
-        {
-            case State.BeforeInteraction:
-                state = State.AfterInteraction;
-                if (TryGetNextInteractable(out IInteractable interactable))
-                {
-                    stateTimer = interactable.Interact();
-                }
-                break;
-            case State.AfterInteraction:
-                return UpdateActionResult.NextStep;
         }
 
         return UpdateActionResult.Continue;

@@ -12,7 +12,6 @@ public class Lift : MonoBehaviour, IInteractable
     [SerializeField] private Transform upPosition;
     [SerializeField] private Transform downPosition;
     [SerializeField] private State state;
-    [SerializeField] private float afterInteractiontTime = .5f;
     [SerializeField] private float moveSpeed = 4f;
     [SerializeField] private float stoppingDistance = .1f;
 
@@ -72,17 +71,16 @@ public class Lift : MonoBehaviour, IInteractable
             || LevelGrid.Instance.TryGetUnitAtGridPosition(upGridPosition, out unit);
     }
 
-    public bool CanInteract()
+    public bool CanInteract(Unit unit)
     {
         if(state == State.MoveUp || state == State.MoveDown) return false;
-        else if (state == State.PositionUp && LevelGrid.Instance.TryGetUnitAtGridPosition(downGridPosition, out Unit unitUnderLift)) return false;
+        if (TryGetUnitInLift(out Unit unitInLift) && unitInLift != unit) return false;
         return true;
     }
 
-    public float Interact()
+    public void Interact()
     {
         NextState();
-        return afterInteractiontTime;
     }
 
     private void NextState()
@@ -156,7 +154,7 @@ public class Lift : MonoBehaviour, IInteractable
     public bool CanInteractByUnit(Unit unit)
     {
         int unitFloor = unit.GetGridPosition().floor;
-        if(CanInteract() && unit.TryGetComponent<InteractAction>(out var interactAction))
+        if(CanInteract(unit) && unit.TryGetComponent<InteractAction>(out var interactAction))
         {
             var actionsCount = interactAction.GetPossibleActionsCount();
             if (actionsCount >= 2)
@@ -174,5 +172,10 @@ public class Lift : MonoBehaviour, IInteractable
         }
 
         return false;
+    }
+
+    public bool FinishedInteraction()
+    {
+        return state == State.PositionUp || state == State.PositionDown;
     }
 }

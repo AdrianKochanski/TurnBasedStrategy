@@ -13,6 +13,8 @@ namespace Game.Interactions
         private List<GridPosition> positions;
         [SerializeField] private float afterInteractiontTime = .5f;
 
+        private float timer;
+
         private void Awake()
         {
             animator = GetComponent<Animator>();
@@ -32,8 +34,21 @@ namespace Game.Interactions
             }
         }
 
-        public float Interact()
+        private void Update()
         {
+            if(timer > 0)
+            {
+                timer -= Time.deltaTime;
+            }
+            else
+            {
+                timer = 0;
+            }
+        }
+
+        public void Interact()
+        {
+            timer = afterInteractiontTime;
             if (isOpen)
             {
                 CloseDoor();
@@ -42,11 +57,9 @@ namespace Game.Interactions
             {
                 OpenDoor();
             }
-
-            return afterInteractiontTime;
         }
 
-        public bool CanInteract()
+        public bool CanInteract(Unit unit)
         {
             if (isOpen)
             {
@@ -91,6 +104,11 @@ namespace Game.Interactions
             {
                 LevelGrid.Instance.SetInteractableAtGrid(position, this);
             }
+        }
+
+        public bool FinishedInteraction()
+        {
+            return timer == 0;
         }
     }
 }

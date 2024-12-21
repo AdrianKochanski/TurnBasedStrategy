@@ -1,3 +1,4 @@
+using Game.Units;
 using System;
 using UnityEngine;
 
@@ -74,7 +75,7 @@ namespace Game.Grid
 
         internal bool IsWalkable()
         {
-            return isWalkable;
+            return isWalkable && !LevelGrid.Instance.TryGetUnitAtGridPosition(_gridPosition, out Unit unit);
         }
 
         internal void SetWalkable(bool isWalkable)
