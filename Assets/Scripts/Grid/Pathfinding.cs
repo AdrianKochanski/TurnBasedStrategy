@@ -1,9 +1,9 @@
 using Game.Interactions;
 using System.Collections.Generic;
 using System.Linq;
-using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
+using Unit = Game.Units.Unit;
 
 namespace Game.Grid
 {
@@ -98,8 +98,9 @@ namespace Game.Grid
             return true;
         }
 
-        public IEnumerable<GridPosition> FindPath(GridPosition startGridPosition, GridPosition endGridPosition, int? range, out int pathLength)
+        public IEnumerable<GridPosition> FindPath(Unit unit, GridPosition endGridPosition, int? range, out int pathLength)
         {
+            GridPosition startGridPosition = unit.GetGridPosition();
             PriorityQueue<PathNode> openList = new();
             List<PathNode> closedList = new List<PathNode>();
 
@@ -139,7 +140,7 @@ namespace Game.Grid
                     }
 
                     closedList.Add(currentNode);
-                    var neighbours = GetNeighbourLinkedList(currentNode.GetGridPosition());
+                    var neighbours = GetNeighbourLinkedList(unit, currentNode.GetGridPosition());
 
                     foreach (PathNode neighbourNode in neighbours)
                     {
@@ -201,9 +202,17 @@ namespace Game.Grid
             return TryGetGridSystem(gridPosition.floor, out GridSystemHex<PathNode> gridSystem) && gridSystem.TryGetGridObject(gridPosition, out PathNode pathNode) && pathNode.IsWalkable();
         }
 
-        public bool HasPath(GridPosition startGridPosition, GridPosition endGridPosition, int range, out int pathLength)
+        public bool HasPath(Unit unit, GridPosition endGridPosition, int range, out int pathLength)
         {
-            return FindPath(startGridPosition, endGridPosition, range, out pathLength).Count() > 0;
+            return FindPath(unit, endGridPosition, range, out pathLength).Count() > 0;
+        }
+
+        private IEnumerable<PathNode> GetNeighbourLinkedList(Unit unit, GridPosition gridPosition)
+        {
+            List<PathNode> neighbourList = GetNeighbourList(gridPosition).ToList();
+            var linkNodes = GetConntectedPathNodes(unit, gridPosition);
+            neighbourList.AddRange(linkNodes);
+            return neighbourList;
         }
 
         public IEnumerable<PathNode> GetNeighbourList(GridPosition gridPosition)
@@ -219,22 +228,11 @@ namespace Game.Grid
             }).NotNull().Where(n => n.IsWalkable());
         }
 
-        private IEnumerable<PathNode> GetNeighbourLinkedList(GridPosition gridPosition)
-        {
-            List<PathNode> neighbourList = GetNeighbourList(gridPosition).ToList();
-            var linkNodes = GetConntectedPathNodes(gridPosition);
-            if (linkNodes.Count() > 0)
-            {
-                neighbourList.AddRange(linkNodes);
-            }
-
-            return neighbourList;
-        }
-
-        private IEnumerable<PathNode> GetConntectedPathNodes(GridPosition gridPosition)
+        private IEnumerable<PathNode> GetConntectedPathNodes(Unit unit, GridPosition gridPosition)
         {
             if (LevelGrid.Instance.TryGetInteractableAtGrid(gridPosition, out IInteractable interactable)
-                && interactable is Lift lift && lift.TryGetConnectedLinks(gridPosition, out IEnumerable<GridPosition> connectedGrids))
+                && interactable is Lift lift && lift.TryGetConnectedLinks(gridPosition, out IEnumerable<GridPosition> connectedGrids)
+                && lift.CanInteractByUnit(unit))
             {
                 return connectedGrids.Select(g => GetNode(g.x, g.z, g.floor)).NotNull().Where(n => n.IsWalkable());
             }

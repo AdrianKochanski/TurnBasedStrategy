@@ -298,22 +298,22 @@ PrefabInstance:
     - target: {fileID: 6357810760602688601, guid: 7204a82a1a0dbf14280bbfb7e13d9d0e,
         type: 3}
       propertyPath: range
-      value: 4
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 6357810760602688601, guid: 7204a82a1a0dbf14280bbfb7e13d9d0e,
         type: 3}
       propertyPath: points
-      value: 4
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 6357810760602688601, guid: 7204a82a1a0dbf14280bbfb7e13d9d0e,
         type: 3}
       propertyPath: maxPointLimit
-      value: 4
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 6357810760602688601, guid: 7204a82a1a0dbf14280bbfb7e13d9d0e,
         type: 3}
       propertyPath: restorePointTurnRate
-      value: 4
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 6975527474775201948, guid: 7204a82a1a0dbf14280bbfb7e13d9d0e,
         type: 3}
@@ -15711,22 +15711,22 @@ PrefabInstance:
     - target: {fileID: 6357810760602688601, guid: 7204a82a1a0dbf14280bbfb7e13d9d0e,
         type: 3}
       propertyPath: range
-      value: 4
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 6357810760602688601, guid: 7204a82a1a0dbf14280bbfb7e13d9d0e,
         type: 3}
       propertyPath: points
-      value: 4
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 6357810760602688601, guid: 7204a82a1a0dbf14280bbfb7e13d9d0e,
         type: 3}
       propertyPath: maxPointLimit
-      value: 4
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 6357810760602688601, guid: 7204a82a1a0dbf14280bbfb7e13d9d0e,
         type: 3}
       propertyPath: restorePointTurnRate
-      value: 4
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 6975527474775201948, guid: 7204a82a1a0dbf14280bbfb7e13d9d0e,
         type: 3}

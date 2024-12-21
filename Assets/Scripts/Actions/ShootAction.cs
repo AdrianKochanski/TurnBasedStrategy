@@ -35,7 +35,7 @@ namespace Game.Actions
             return "SHOOT";
         }
 
-        public override bool UpdateAction()
+        protected override UpdateActionResult UpdateAction()
         {
             stateTimer -= Time.deltaTime;
 
@@ -55,7 +55,7 @@ namespace Game.Actions
                         }
                         break;
                     case State.Cooloff:
-                        return true;
+                        return UpdateActionResult.NextStep;
                 }
             }
 
@@ -64,7 +64,7 @@ namespace Game.Actions
                 return NextState();
             }
 
-            return false;
+            return UpdateActionResult.Continue;
         }
 
         private void Shoot()
@@ -73,7 +73,7 @@ namespace Game.Actions
             OnAnyShoot?.Invoke(unit, targetUnit);
         }
 
-        private bool NextState()
+        private UpdateActionResult NextState()
         {
             switch (state)
             {
@@ -86,10 +86,10 @@ namespace Game.Actions
                     stateTimer = cooloffStateTime;
                     break;
                 case State.Cooloff:
-                    return true;
+                    return UpdateActionResult.NextStep;
             }
 
-            return false;
+            return UpdateActionResult.Continue;
         }
 
         public override bool TryStartAction(List<GridPosition> targetGridPositions)

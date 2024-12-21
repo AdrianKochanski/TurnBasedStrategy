@@ -52,7 +52,7 @@ namespace Game.Actions
             (bool validRange, bool validTarget) = base.IsValidGridPosition(targetPosition, out cost);
             if (!validRange || !validTarget) return (false, false);
 
-            if (!Pathfinding.Instance.HasPath(unit.GetGridPosition(), targetPosition, GetPossibleActionsCountLimit(), out int pathLength)) return (false, false);
+            if (!Pathfinding.Instance.HasPath(unit, targetPosition, GetPossibleActionsCountLimit(), out int pathLength)) return (false, false);
             //cost = (float)pathLength / (float)Pathfinding.Instance.GetMoveCost();
 
             if (!LevelGrid.Instance.TryGetUnitAtGridPosition(targetPosition, out Unit testUnit)
@@ -70,7 +70,7 @@ namespace Game.Actions
             return base.TryStartAction(targetGridPositions);
         }
 
-        public override bool UpdateAction()
+        protected override UpdateActionResult UpdateAction()
         {
             stateTimer -= Time.deltaTime;
 
@@ -83,7 +83,7 @@ namespace Game.Actions
                         transform.forward = Vector3.Lerp(transform.forward, moveDirection, rotateAimingSpeed * Time.deltaTime);
                         break;
                     case State.AfterHit:
-                        return true;
+                        return UpdateActionResult.NextStep;
                 }
             }
 
@@ -92,10 +92,10 @@ namespace Game.Actions
                 return NextState();
             }
 
-            return false;
+            return UpdateActionResult.Continue;
         }
 
-        private bool NextState()
+        private UpdateActionResult NextState()
         {
             switch (state)
             {
@@ -109,10 +109,10 @@ namespace Game.Actions
                     }
                     break;
                 case State.AfterHit:
-                    return true;
+                    return UpdateActionResult.NextStep;
             }
 
-            return false;
+            return UpdateActionResult.Continue;
         }
 
         private bool TryGetNextTargetUnit(out Unit currentTargetUnit)
@@ -125,27 +125,6 @@ namespace Game.Actions
             }
 
             return false;
-        }
-
-        private GridPosition? GetPositionWithShortestAdjacentPath(GridPosition startGridPosition, GridPosition endGridPosition)
-        {
-            var testPositions = GetAdjacentPositions(endGridPosition);
-
-            GridPosition? endPosition = null;
-            int pathLength = int.MaxValue;
-
-            foreach (GridPosition testEndPosition in testPositions)
-            {
-                Pathfinding.Instance.FindPath(startGridPosition, testEndPosition, GetPossibleActionsCountLimit(), out int testEndLength);
-                (var validRange, var validTarget) = moveAction.IsValidGridPosition(testEndPosition, out float cost);
-                if (validTarget && testEndLength < pathLength)
-                {
-                    pathLength = testEndLength;
-                    endPosition = testEndPosition;
-                }
-            }
-
-            return endPosition;
         }
 
         private IEnumerable<GridPosition> GetAdjacentPositions(GridPosition position)

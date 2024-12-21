@@ -39,24 +39,23 @@ namespace Game.Actions
             interactAction = gameObject.GetComponent<InteractAction>();
         }
 
-        public override bool UpdateAction()
+        protected override UpdateActionResult UpdateAction()
         {
             if (TryGetCurrentTargetWorldPosition(out Vector3 targetPosition))
             {
                 GridPosition currentTargetPosition = CurrentTargetPosition();
                 GridPosition currentUnitPosition = unit.GetGridPosition();
-                bool foundLift = GetLiftAtGridPositions(currentUnitPosition, currentTargetPosition, out Lift lift, out GridPosition liftGrid);
+                bool foundLift = GetLiftAtGridPositions(unit, currentTargetPosition, out Lift lift, out GridPosition liftGrid);
                 bool needsLift = currentUnitPosition.floor != currentTargetPosition.floor;
                 Vector3 moveDirection = (targetPosition - transform.position).normalized;
                 moveDirection.y = 0f;
                 transform.forward = Vector3.Lerp(transform.forward, moveDirection, rotateSpeed * Time.deltaTime);
 
-                Debug.Log(state);
                 switch (state)
                 {
                     case State.Rotating:
                         float angleDifference = Vector3.Angle(transform.forward, moveDirection);
-                        if (angleDifference <= rotationTolerance)
+                        if (GridPosition.IsParallel(currentTargetPosition, currentUnitPosition) || angleDifference <= rotationTolerance)
                         {
                             state = State.Walking;
                         }
@@ -73,8 +72,7 @@ namespace Game.Actions
                         else
                         {
                             transform.position = targetPosition;
-                            state = State.Rotating;
-                            return true;
+                            return UpdateActionResult.NextStep;
                         }
                         break;
                     case State.CallTheLift:
@@ -83,7 +81,7 @@ namespace Game.Actions
                             if(!UnitActionSystem.Instance.HandleChainedAction(interactAction, new List<GridPosition>() { liftGrid }))
                             {
                                 state = State.Rotating;
-                                return true;
+                                return UpdateActionResult.Break;
                             }
                         }
                         onStopWalking?.Invoke();
@@ -107,7 +105,7 @@ namespace Game.Actions
                             if (!UnitActionSystem.Instance.HandleChainedAction(interactAction, new List<GridPosition>() { currentUnitPosition }))
                             {
                                 state = State.Rotating;
-                                return true;
+                                return UpdateActionResult.Break;
                             }
                             onStopWalking?.Invoke();
                             state = State.InLift;
@@ -123,12 +121,13 @@ namespace Game.Actions
                 }
             }
 
-            return false;
+            return UpdateActionResult.Continue;
         }
 
         public override bool TryStartAction(List<GridPosition> targetGridPositions)
         {
-            targetGridPositions = targetGridPositions.SelectMany(p => Pathfinding.Instance.FindPath(unit.GetGridPosition(), p, GetPossibleActionsCountLimit(), out int pathLength)).ToList();
+            state = State.Rotating;
+            targetGridPositions = targetGridPositions.SelectMany(p => Pathfinding.Instance.FindPath(unit, p, GetPossibleActionsCountLimit(), out int pathLength)).ToList();
             return base.TryStartAction(targetGridPositions);
         }
 
@@ -139,7 +138,7 @@ namespace Game.Actions
             if (!validRange || !validTarget) return (false, false);
             if (!LevelGrid.Instance.IsUnitInsideTheGrid(unit)) return (false, false);
             if (LevelGrid.Instance.HasAnyUnitOnGridPosition(targetPosition)) return (false, false);
-            if (!Pathfinding.Instance.HasPath(unit.GetGridPosition(), targetPosition, GetPossibleActionsCountLimit(), out int pathLength)) return (false, false);
+            if (!Pathfinding.Instance.HasPath(unit, targetPosition, GetPossibleActionsCountLimit(), out int pathLength)) return (false, false);
             
             cost = (float)pathLength / (float)Pathfinding.Instance.GetMoveCost();
             return (true, true);
@@ -161,9 +160,10 @@ namespace Game.Actions
             };
         }
 
-        private bool GetLiftAtGridPositions(GridPosition unitPosition, GridPosition targetPosition, out Lift lift, out GridPosition liftGrid)
+        private bool GetLiftAtGridPositions(Unit unit, GridPosition targetPosition, out Lift lift, out GridPosition liftGrid)
         {
-            if(LevelGrid.Instance.TryGetInteractableAtGrid(unitPosition, out IInteractable interactable) && interactable is Lift)
+            GridPosition unitPosition = unit.GetGridPosition();
+            if (LevelGrid.Instance.TryGetInteractableAtGrid(unitPosition, out IInteractable interactable) && interactable is Lift)
             {
                 liftGrid = unitPosition;
                 lift = interactable as Lift;

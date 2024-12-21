@@ -28,7 +28,7 @@ public class GrenadeAction : BaseAction
         return "Grenade";
     }
 
-    public override bool UpdateAction()
+    protected override UpdateActionResult UpdateAction()
     {
         if(TryGetCurrentTargetWorldPosition(out Vector3 targetPosition))
         {
@@ -50,11 +50,11 @@ public class GrenadeAction : BaseAction
                     NextState();
                     break;
                 case State.TargetReached:
-                    return true;
+                    return UpdateActionResult.NextStep;
             }
         }
 
-        return false;
+        return UpdateActionResult.Continue;
     }
 
     private bool NextState()

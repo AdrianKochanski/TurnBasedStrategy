@@ -20,6 +20,13 @@ namespace Game.Actions
         [SerializeField] protected GridVisualType rangeVisualType = GridVisualType.Yellow;
         [SerializeField] protected LayerMask obstaclesLayerMask;
 
+        protected enum UpdateActionResult
+        {
+            NextStep,
+            Break,
+            Continue
+        }
+
         protected Unit unit;
         private bool isActive;
         protected List<(GridPosition, float)> targetPositions;
@@ -48,20 +55,33 @@ namespace Game.Actions
         protected void Update() 
         { 
             if (!isActive) return;
+            var updateResult = UpdateAction();
 
-            if(UpdateAction())
+            switch(updateResult)
             {
-                UpdateActionPoints();
-                currentTargetPositionIdx++;
-                UpdateActionGridPositions();
+                case UpdateActionResult.NextStep:
+                    UpdateActionPoints();
+                    currentTargetPositionIdx++;
+                    UpdateActionGridPositions();
 
-                if (currentTargetPositionIdx >= targetPositions.Count)
-                {
-                    isActive = false;
-                    onActionComplete?.Invoke();
-                    OnAnyActionComplete?.Invoke(this);
-                }
+                    if (currentTargetPositionIdx >= targetPositions.Count)
+                    {
+                        OnActionComplete();
+                    }
+                    break;
+                case UpdateActionResult.Break:
+                        OnActionComplete();
+                    break;
+                case UpdateActionResult.Continue:
+                    break;
             }
+        }
+
+        private void OnActionComplete()
+        {
+            isActive = false;
+            onActionComplete?.Invoke();
+            OnAnyActionComplete?.Invoke(this);
         }
 
         private void TurnSystem_OnTurnChange(int turnNumber)
@@ -71,7 +91,7 @@ namespace Game.Actions
             OnRestorePoints?.Invoke();
         }
 
-        public abstract bool UpdateAction();
+        protected abstract UpdateActionResult UpdateAction();
         public abstract string GetActionName();
         public virtual bool TryStartAction(List<GridPosition> targetGridPositions)
         {

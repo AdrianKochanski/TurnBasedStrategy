@@ -54,7 +54,7 @@ public class InteractAction : BaseAction
         return base.TryStartAction(targetGridPositions);
     }
 
-    public override bool UpdateAction()
+    protected override UpdateActionResult UpdateAction()
     {
         stateTimer -= Time.deltaTime;
 
@@ -63,11 +63,14 @@ public class InteractAction : BaseAction
             switch (state)
             {
                 case State.BeforeInteraction:
-                    Vector3 moveDirection = (targetPosition - transform.position).normalized;
-                    transform.forward = Vector3.Lerp(transform.forward, moveDirection, rotateAimingSpeed * Time.deltaTime);
+                    if(!GridPosition.IsParallel(CurrentTargetPosition(), unit.GetGridPosition()))
+                    {
+                        Vector3 moveDirection = (targetPosition - transform.position).normalized;
+                        transform.forward = Vector3.Lerp(transform.forward, moveDirection, rotateAimingSpeed * Time.deltaTime);
+                    }
                     break;
                 case State.AfterInteraction:
-                    return true;
+                    return UpdateActionResult.NextStep;
             }
         }
 
@@ -76,10 +79,10 @@ public class InteractAction : BaseAction
             return NextState();
         }
 
-        return false;
+        return UpdateActionResult.Continue;
     }
 
-    private bool NextState()
+    private UpdateActionResult NextState()
     {
         switch (state)
         {
@@ -91,10 +94,10 @@ public class InteractAction : BaseAction
                 }
                 break;
             case State.AfterInteraction:
-                return true;
+                return UpdateActionResult.NextStep;
         }
 
-        return false;
+        return UpdateActionResult.Continue;
     }
 
     private bool TryGetNextInteractable(out IInteractable interactable)

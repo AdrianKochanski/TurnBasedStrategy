@@ -152,4 +152,27 @@ public class Lift : MonoBehaviour, IInteractable
     {
         return state;
     }
+
+    public bool CanInteractByUnit(Unit unit)
+    {
+        int unitFloor = unit.GetGridPosition().floor;
+        if(CanInteract() && unit.TryGetComponent<InteractAction>(out var interactAction))
+        {
+            var actionsCount = interactAction.GetPossibleActionsCount();
+            if (actionsCount >= 2)
+            {
+                return true;
+            }
+            if(actionsCount == 1)
+            {
+                if(state == State.PositionDown && downGridPosition.floor == unitFloor
+                || state == State.PositionUp && upGridPosition.floor == unitFloor)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
 }

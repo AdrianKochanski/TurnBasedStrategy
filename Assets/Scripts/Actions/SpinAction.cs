@@ -18,7 +18,7 @@ namespace Game.Actions
             return base.TryStartAction(targetGridPositions);
         }
 
-        public override bool UpdateAction()
+        protected override UpdateActionResult UpdateAction()
         {
             float spinToAdd = spinSpeed * Time.deltaTime;
             transform.eulerAngles += new Vector3(0, spinToAdd, 0);
@@ -26,10 +26,10 @@ namespace Game.Actions
 
             if (totalSpinAmount >= eulerAnglesDestination)
             {
-                return true;
+                return UpdateActionResult.NextStep;
             }
 
-            return false;
+            return UpdateActionResult.Continue;
         }
 
         public override (bool, bool) IsValidGridPosition(GridPosition targetPosition, out float cost)

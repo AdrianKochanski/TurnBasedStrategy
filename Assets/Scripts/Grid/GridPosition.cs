@@ -54,5 +54,10 @@ namespace Game.Grid
         {
             return new GridPosition(a.x - b.x, a.z - b.z, a.floor - b.floor);
         }
+
+        public static bool IsParallel(GridPosition a, GridPosition b)
+        {
+            return a.x == b.x && a.z == b.z;
+        }
     }
 }
